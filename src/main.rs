@@ -1,4 +1,8 @@
-use parsexpr::lexer::{self, Lexer, Operation, Token};
+use parsexpr::{
+    lexer::{self, Lexer, Operation, Token},
+    types::UnitValue,
+    units::LengthDimension,
+};
 
 fn main() {
     // let expressions = vec![
@@ -21,7 +25,7 @@ fn main() {
     //     println!("-------------");
     // }
 
-    let expressions = vec!["2 + 3 * (100.50 - 4)", "2^10", "2^(1+1)"];
+    let expressions = vec!["1m to cm", "1 meter to centimeters"];
 
     for e in expressions {
         println!("\nExpression: {}", e);
@@ -44,6 +48,11 @@ fn main() {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Number(f64),
+    UnitValue {
+        value: f64,
+        unit: String,
+    },
+    Unit(String),
     Binary {
         op: Operation,
         left: Box<Expression>,
@@ -119,6 +128,11 @@ impl Parser {
     fn parse_primary(&mut self) -> Result<Expression, String> {
         match self.advance() {
             Some(Token::Number(n)) => Ok(Expression::Number(*n)),
+            Some(Token::UnitValue { value, unit }) => Ok(Expression::UnitValue {
+                value: *value,
+                unit: unit.clone(),
+            }),
+            Some(Token::Unit(unit)) => Ok(Expression::Unit(unit.clone())),
             Some(Token::Lparen) => {
                 let expr = self.parse_expression(0)?;
                 match self.advance() {
@@ -177,16 +191,45 @@ impl Parser {
 fn evaluate(expr: &Expression) -> f64 {
     match expr {
         Expression::Number(n) => *n,
+        Expression::UnitValue { value, unit: _ } => {
+            // For now, just return the numeric value
+            // TODO: Implement proper unit handling
+            *value
+        }
+        Expression::Unit(_unit) => {
+            // Units by themselves don't have a numeric value
+            panic!("Cannot evaluate a unit without a value")
+        }
         Expression::Binary { op, left, right } => {
-            let left_val = evaluate(left);
-            let right_val = evaluate(right);
             match op {
-                Operation::Add => left_val + right_val,
-                Operation::Subtract => left_val - right_val,
-                Operation::Multiply => left_val * right_val,
-                Operation::Divide => left_val / right_val,
-                Operation::Power => left_val.powf(right_val),
-                _ => panic!("Unsupported operation in evaluation"),
+                Operation::Convert => {
+                    // For now, just return the left value
+                    let from = match left.as_ref() {
+                        Expression::UnitValue { value, unit } => {
+                            LengthDimension::from_unit(&unit, *value).unwrap()
+                        }
+                        _ => panic!("Invalid conversion"),
+                    };
+
+                    let to = match right.as_ref() {
+                        Expression::Unit(u) => LengthDimension::parse_unit(u).unwrap(),
+                        _ => panic!("invalid conversion"),
+                    };
+
+                    from.convert_to(to).value()
+                }
+                _ => {
+                    let left_val = evaluate(left);
+                    let right_val = evaluate(right);
+                    match op {
+                        Operation::Add => left_val + right_val,
+                        Operation::Subtract => left_val - right_val,
+                        Operation::Multiply => left_val * right_val,
+                        Operation::Divide => left_val / right_val,
+                        Operation::Power => left_val.powf(right_val),
+                        _ => panic!("Unsupported operation in evaluation"),
+                    }
+                }
             }
         }
         Expression::Unary { op, operand } => {

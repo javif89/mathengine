@@ -15,26 +15,6 @@ impl fmt::Display for UnitError {
 
 impl std::error::Error for UnitError {}
 
-/// Trait for all dimension types (Length, Temperature, Mass, etc.)
-pub trait Dimension: Sized + Clone + fmt::Debug {
-    type Unit: Clone + PartialEq + fmt::Debug;
-
-    /// Create a dimension from a unit string and value
-    fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError>;
-
-    /// Convert to a different unit of the same dimension
-    fn convert_to(&self, unit: Self::Unit) -> Self;
-
-    /// Get the numeric value
-    fn value(&self) -> f64;
-
-    /// Get the unit
-    fn unit(&self) -> Self::Unit;
-
-    /// Get the name of this dimension (e.g., "Length", "Temperature")
-    fn dimension_name() -> &'static str;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LengthUnit {
     Meter,
@@ -65,13 +45,20 @@ impl LengthDimension {
     pub const YARDS: LengthUnit = LengthUnit::Yard;
     pub const MILES: LengthUnit = LengthUnit::Mile;
 
+    /// Create a LengthDimension from a unit string and value
+    /// Example: LengthDimension::from_unit("cm", 10.0)
+    pub fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
+        let unit = Self::parse_unit(unit_str)?;
+        Ok(Self { value, unit })
+    }
+
     /// Create a LengthDimension directly with a LengthUnit
     pub fn new(value: f64, unit: LengthUnit) -> Self {
         Self { value, unit }
     }
 
     /// Parse a string into a LengthUnit
-    fn parse_unit(s: &str) -> Result<LengthUnit, UnitError> {
+    pub fn parse_unit(s: &str) -> Result<LengthUnit, UnitError> {
         match s.to_lowercase().as_str() {
             "m" | "meter" | "meters" => Ok(LengthUnit::Meter),
             "cm" | "centimeter" | "centimeters" => Ok(LengthUnit::Centimeter),
@@ -113,45 +100,35 @@ impl LengthDimension {
         }
     }
 
-    /// Get value as meters
-    pub fn as_meters(&self) -> f64 {
-        self.to_meters()
-    }
-}
-
-impl Dimension for LengthDimension {
-    type Unit = LengthUnit;
-
-    fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
-        let unit = Self::parse_unit(unit_str)?;
-        Ok(Self { value, unit })
-    }
-
-    fn convert_to(&self, unit: Self::Unit) -> Self {
-        if self.unit == unit {
+    /// Convert this length to a different unit
+    pub fn convert_to(&self, target: LengthUnit) -> Self {
+        if self.unit == target {
             return self.clone();
         }
 
         // All conversions go through meters (base unit)
         let meters = self.to_meters();
-        let converted_value = Self::from_meters(meters, unit);
+        let converted_value = Self::from_meters(meters, target);
 
         Self {
             value: converted_value,
-            unit,
+            unit: target,
         }
     }
 
-    fn value(&self) -> f64 {
+    /// Get the numeric value
+    pub fn value(&self) -> f64 {
         self.value
     }
 
-    fn unit(&self) -> Self::Unit {
+    /// Get the unit
+    pub fn unit(&self) -> LengthUnit {
         self.unit
     }
 
-    fn dimension_name() -> &'static str {
-        "Length"
+    /// Get value as meters
+    pub fn as_meters(&self) -> f64 {
+        self.to_meters()
     }
 }
 
@@ -177,24 +154,17 @@ mod tests {
 
     #[test]
     fn test_length_creation() {
-        // Using the Dimension trait method
-        let length = <LengthDimension as Dimension>::from_unit("cm", 10.0).unwrap();
+        let length = LengthDimension::from_unit("cm", 10.0).unwrap();
         assert_eq!(length.value(), 10.0);
         assert_eq!(length.unit(), LengthUnit::Centimeter);
     }
 
     #[test]
     fn test_length_conversion() {
-        // Can use either trait method or direct
         let length = LengthDimension::from_unit("cm", 100.0).unwrap();
         let in_meters = length.convert_to(LengthDimension::METERS);
         assert_eq!(in_meters.value(), 1.0);
         assert_eq!(in_meters.unit(), LengthUnit::Meter);
-    }
-
-    #[test]
-    fn test_dimension_name() {
-        assert_eq!(LengthDimension::dimension_name(), "Length");
     }
 
     #[test]
