@@ -1,31 +1,20 @@
 use parsexpr::{
-    lexer::{self, Lexer, Operation, Token},
+    lexer::{Lexer, Operation, Token},
     types::{Number, UnitValue, Value},
-    units::LengthDimension,
+    units::{length::LengthDimension, temperature::TemperatureDimension},
 };
 
 fn main() {
-    // let expressions = vec![
-    //     "2 + 3 * (100.50 - 4)",
-    //     "10m to feet",
-    //     "10m + 2",
-    //     "20lbs to kg",
-    //     "10 feet to in",
-    //     "2^10",
-    // ];
-
-    // for e in expressions {
-    //     let l = Lexer::new(e);
-    //     let tokens = l.tokenize();
-
-    //     println!("---{}---", e);
-    //     for t in tokens {
-    //         println!("{:?}", t);
-    //     }
-    //     println!("-------------");
-    // }
-
-    let expressions = vec!["1m to cm + 10", "10m * 10", "1m to cm + (10 + 5)"];
+    let expressions = vec![
+        "2 + 3 * (100.50 - 4)",
+        "10m to feet",
+        "10m + 2",
+        // "20lbs to kg",
+        "10 feet to in",
+        "2^10",
+        "23C to f",
+        "1m to miles",
+    ];
 
     for e in expressions {
         println!("\nExpression: {}", e);
@@ -37,7 +26,7 @@ fn main() {
         let mut parser = Parser::new(tokens);
         match parser.parse() {
             Ok(expr) => {
-                println!("AST: {:#?}", expr);
+                // println!("AST: {:#?}", expr);
                 println!("Result: {}", evaluate(&expr));
             }
             Err(err) => println!("Parse error: {}", err),
@@ -130,10 +119,7 @@ impl Parser {
             Some(Token::Number(n)) => Ok(Expression::Number(*n)),
             Some(Token::UnitValue { value, unit }) => Ok(Expression::UnitValue {
                 value: *value,
-                unit: LengthDimension::parse_unit(&unit)
-                    .unwrap()
-                    .canonical_string()
-                    .into(),
+                unit: canonicalize_unit(unit),
             }),
             Some(Token::Unit(unit)) => Ok(Expression::Unit(unit.clone())),
             Some(Token::Lparen) => {
@@ -203,24 +189,37 @@ fn evaluate(expr: &Expression) -> Value {
         }
         Expression::Binary { op, left, right } => match op {
             Operation::Convert => {
-                let from = match left.as_ref() {
-                    Expression::UnitValue { value, unit } => {
-                        LengthDimension::from_unit(&unit, *value).unwrap()
-                    }
+                let (value, from_unit) = match left.as_ref() {
+                    Expression::UnitValue { value, unit } => (*value, unit),
                     _ => panic!("Invalid conversion"),
                 };
 
                 let to_unit = match right.as_ref() {
-                    Expression::Unit(u) => LengthDimension::parse_unit(u).unwrap(),
+                    Expression::Unit(u) => u,
                     _ => panic!("Invalid conversion"),
                 };
 
-                let converted = from.convert_to(to_unit);
-
-                Value::UnitValue(UnitValue::new(
-                    converted.value(),
-                    to_unit.canonical_string().into(),
-                ))
+                match get_dimension_type(&from_unit) {
+                    DimensionType::Length => {
+                        let from = LengthDimension::from_unit(&from_unit, value).unwrap();
+                        let to = LengthDimension::parse_unit(to_unit).unwrap();
+                        let converted = from.convert_to(to);
+                        Value::UnitValue(UnitValue::new(
+                            converted.value(),
+                            to.canonical_string().into(),
+                        ))
+                    }
+                    DimensionType::Temperature => {
+                        let from = TemperatureDimension::from_unit(&from_unit, value).unwrap();
+                        let to = TemperatureDimension::parse_unit(to_unit).unwrap();
+                        let converted = from.convert_to(to);
+                        Value::UnitValue(UnitValue::new(
+                            converted.value(),
+                            to.canonical_string().into(),
+                        ))
+                    }
+                    DimensionType::Unknown => panic!("Unknown dimension type"),
+                }
             }
             _ => {
                 let left_val = evaluate(left);
@@ -282,5 +281,35 @@ fn evaluate(expr: &Expression) -> Value {
                 _ => panic!("Unsupported unary operation"),
             }
         }
+    }
+}
+
+enum DimensionType {
+    Length,
+    Temperature,
+    Unknown,
+}
+
+fn get_dimension_type(unit: &str) -> DimensionType {
+    if let Ok(_) = LengthDimension::parse_unit(unit) {
+        return DimensionType::Length;
+    } else if let Ok(_) = TemperatureDimension::parse_unit(unit) {
+        return DimensionType::Temperature;
+    }
+
+    DimensionType::Unknown
+}
+
+fn canonicalize_unit(unit: &str) -> String {
+    match get_dimension_type(unit) {
+        DimensionType::Length => LengthDimension::parse_unit(unit)
+            .unwrap()
+            .canonical_string()
+            .into(),
+        DimensionType::Temperature => TemperatureDimension::parse_unit(unit)
+            .unwrap()
+            .canonical_string()
+            .into(),
+        DimensionType::Unknown => "unknown".into(),
     }
 }
