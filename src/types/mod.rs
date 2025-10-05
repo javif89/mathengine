@@ -90,3 +90,51 @@ impl std::ops::Add<Number> for UnitValue {
         }
     }
 }
+
+impl UnitValue {
+    pub fn new(value: f64, unit: String) -> Self {
+        Self { value, unit }
+    }
+
+    pub fn value(&self) -> f64 {
+        self.value
+    }
+
+    pub fn unit(&self) -> &str {
+        &self.unit
+    }
+}
+
+/// Unified value type for evaluation results
+#[derive(Debug)]
+pub enum Value {
+    Number(Number),
+    UnitValue(UnitValue),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Number(n) => write!(f, "{}", n),
+            Value::UnitValue(uv) => write!(f, "{}", uv),
+        }
+    }
+}
+
+impl From<Number> for Value {
+    fn from(n: Number) -> Self {
+        Value::Number(n)
+    }
+}
+
+impl From<UnitValue> for Value {
+    fn from(uv: UnitValue) -> Self {
+        Value::UnitValue(uv)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(f: f64) -> Self {
+        Value::Number(Number(f))
+    }
+}

@@ -1,6 +1,6 @@
 use parsexpr::{
     lexer::{self, Lexer, Operation, Token},
-    types::UnitValue,
+    types::{Number, UnitValue, Value},
     units::LengthDimension,
 };
 
@@ -25,7 +25,12 @@ fn main() {
     //     println!("-------------");
     // }
 
-    let expressions = vec!["1m to cm", "1 meter to centimeters"];
+    let expressions = vec![
+        "1m to cm",
+        "1 meter to centimeters",
+        "2 feet to inches",
+        "12 inches to feet",
+    ];
 
     for e in expressions {
         println!("\nExpression: {}", e);
@@ -130,7 +135,10 @@ impl Parser {
             Some(Token::Number(n)) => Ok(Expression::Number(*n)),
             Some(Token::UnitValue { value, unit }) => Ok(Expression::UnitValue {
                 value: *value,
-                unit: unit.clone(),
+                unit: LengthDimension::parse_unit(&unit)
+                    .unwrap()
+                    .canonical_string()
+                    .into(),
             }),
             Some(Token::Unit(unit)) => Ok(Expression::Unit(unit.clone())),
             Some(Token::Lparen) => {
@@ -188,13 +196,11 @@ impl Parser {
     }
 }
 
-fn evaluate(expr: &Expression) -> f64 {
+fn evaluate(expr: &Expression) -> Value {
     match expr {
-        Expression::Number(n) => *n,
-        Expression::UnitValue { value, unit: _ } => {
-            // For now, just return the numeric value
-            // TODO: Implement proper unit handling
-            *value
+        Expression::Number(n) => Value::Number(Number::from(*n)),
+        Expression::UnitValue { value, unit } => {
+            Value::UnitValue(UnitValue::new(*value, unit.clone()))
         }
         Expression::Unit(_unit) => {
             // Units by themselves don't have a numeric value
@@ -203,7 +209,6 @@ fn evaluate(expr: &Expression) -> f64 {
         Expression::Binary { op, left, right } => {
             match op {
                 Operation::Convert => {
-                    // For now, just return the left value
                     let from = match left.as_ref() {
                         Expression::UnitValue { value, unit } => {
                             LengthDimension::from_unit(&unit, *value).unwrap()
@@ -211,23 +216,41 @@ fn evaluate(expr: &Expression) -> f64 {
                         _ => panic!("Invalid conversion"),
                     };
 
-                    let to = match right.as_ref() {
+                    let to_unit = match right.as_ref() {
                         Expression::Unit(u) => LengthDimension::parse_unit(u).unwrap(),
-                        _ => panic!("invalid conversion"),
+                        _ => panic!("Invalid conversion"),
                     };
 
-                    from.convert_to(to).value()
+                    let converted = from.convert_to(to_unit);
+
+                    Value::UnitValue(UnitValue::new(
+                        converted.value(),
+                        to_unit.canonical_string().into(),
+                    ))
                 }
                 _ => {
                     let left_val = evaluate(left);
                     let right_val = evaluate(right);
-                    match op {
-                        Operation::Add => left_val + right_val,
-                        Operation::Subtract => left_val - right_val,
-                        Operation::Multiply => left_val * right_val,
-                        Operation::Divide => left_val / right_val,
-                        Operation::Power => left_val.powf(right_val),
-                        _ => panic!("Unsupported operation in evaluation"),
+
+                    // For now, only handle Number + Number operations
+                    // TODO: Handle mixed operations with units
+                    match (left_val, right_val) {
+                        (Value::Number(l), Value::Number(r)) => {
+                            let result = match op {
+                                Operation::Add => l + r,
+                                Operation::Subtract => l - r,
+                                Operation::Multiply => l * r,
+                                Operation::Divide => l / r,
+                                Operation::Power => {
+                                    let l_val = l.0;
+                                    let r_val = r.0;
+                                    Number::from(l_val.powf(r_val))
+                                }
+                                _ => panic!("Unsupported operation in evaluation"),
+                            };
+                            Value::Number(result)
+                        }
+                        _ => panic!("Mixed unit/number operations not yet implemented"),
                     }
                 }
             }
@@ -235,7 +258,10 @@ fn evaluate(expr: &Expression) -> f64 {
         Expression::Unary { op, operand } => {
             let val = evaluate(operand);
             match op {
-                Operation::Subtract => -val,
+                Operation::Subtract => match val {
+                    Value::Number(n) => Value::Number(-n),
+                    _ => panic!("Cannot negate non-numeric values"),
+                },
                 _ => panic!("Unsupported unary operation"),
             }
         }

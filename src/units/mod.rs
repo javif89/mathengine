@@ -132,9 +132,10 @@ impl LengthDimension {
     }
 }
 
-impl fmt::Display for LengthDimension {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let unit_str = match self.unit {
+impl LengthUnit {
+    /// Get the canonical string representation for this unit
+    pub fn canonical_string(&self) -> &'static str {
+        match self {
             LengthUnit::Meter => "m",
             LengthUnit::Centimeter => "cm",
             LengthUnit::Millimeter => "mm",
@@ -143,8 +144,13 @@ impl fmt::Display for LengthDimension {
             LengthUnit::Inch => "in",
             LengthUnit::Yard => "yd",
             LengthUnit::Mile => "mi",
-        };
-        write!(f, "{}{}", self.value, unit_str)
+        }
+    }
+}
+
+impl fmt::Display for LengthDimension {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.value, self.unit.canonical_string())
     }
 }
 
