@@ -1,0 +1,6 @@
+[package]
+name = "mathengine-units"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

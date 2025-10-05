@@ -1,4 +1,4 @@
-use crate::units::UnitError;
+use crate::UnitError;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

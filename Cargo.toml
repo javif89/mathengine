@@ -1,6 +1,11 @@
-[package]
-name = "mathengine"
+[workspace]
+resolver = "2"
+members = [
+    "mathengine-units",
+    "mathengine-lexer",
+    "mathengine-parser"
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-
-[dependencies]

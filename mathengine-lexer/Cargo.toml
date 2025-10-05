@@ -1,0 +1,6 @@
+[package]
+name = "mathengine-lexer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

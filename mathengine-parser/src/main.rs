@@ -1,8 +1,8 @@
-use mathengine::{
-    lexer::{Lexer, Operation, Token},
-    types::{Number, UnitValue, Value},
-    units::{length::LengthDimension, temperature::TemperatureDimension},
-};
+use mathengine_lexer::{Lexer, Operation, Token};
+use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
+
+mod types;
+use types::{Number, UnitValue, Value};
 
 fn main() {
     let expressions = vec![

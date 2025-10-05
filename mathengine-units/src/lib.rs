@@ -1,7 +1,7 @@
-use std::fmt;
-
 pub mod length;
 pub mod temperature;
+
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnitError {
