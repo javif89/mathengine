@@ -106,13 +106,53 @@ impl LengthDimension {
             return self.clone();
         }
 
-        // All conversions go through meters (base unit)
+        // Try direct conversion first (for exact imperial conversions)
+        if let Some(direct_value) = Self::convert_direct(self.unit, target, self.value) {
+            return Self {
+                value: direct_value,
+                unit: target,
+            };
+        }
+
+        // Fall back to conversion through meters (base unit)
         let meters = self.to_meters();
         let converted_value = Self::from_meters(meters, target);
 
         Self {
             value: converted_value,
             unit: target,
+        }
+    }
+
+    /// Direct conversions for exact relationships (primarily imperial units)
+    fn convert_direct(from: LengthUnit, to: LengthUnit, value: f64) -> Option<f64> {
+        match (from, to) {
+            // Inch <-> Foot
+            (LengthUnit::Inch, LengthUnit::Foot) => Some(value / 12.0),
+            (LengthUnit::Foot, LengthUnit::Inch) => Some(value * 12.0),
+
+            // Foot <-> Yard
+            (LengthUnit::Foot, LengthUnit::Yard) => Some(value / 3.0),
+            (LengthUnit::Yard, LengthUnit::Foot) => Some(value * 3.0),
+
+            // Inch <-> Yard (12 * 3 = 36)
+            (LengthUnit::Inch, LengthUnit::Yard) => Some(value / 36.0),
+            (LengthUnit::Yard, LengthUnit::Inch) => Some(value * 36.0),
+
+            // Foot <-> Mile (5280 feet per mile)
+            (LengthUnit::Foot, LengthUnit::Mile) => Some(value / 5280.0),
+            (LengthUnit::Mile, LengthUnit::Foot) => Some(value * 5280.0),
+
+            // Inch <-> Mile (5280 * 12 = 63360)
+            (LengthUnit::Inch, LengthUnit::Mile) => Some(value / 63360.0),
+            (LengthUnit::Mile, LengthUnit::Inch) => Some(value * 63360.0),
+
+            // Yard <-> Mile (5280 / 3 = 1760)
+            (LengthUnit::Yard, LengthUnit::Mile) => Some(value / 1760.0),
+            (LengthUnit::Mile, LengthUnit::Yard) => Some(value * 1760.0),
+
+            // No direct conversion available
+            _ => None,
         }
     }
 

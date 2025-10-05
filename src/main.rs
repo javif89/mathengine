@@ -25,19 +25,14 @@ fn main() {
     //     println!("-------------");
     // }
 
-    let expressions = vec![
-        "1m to cm",
-        "1 meter to centimeters",
-        "2 feet to inches",
-        "12 inches to feet",
-    ];
+    let expressions = vec!["1m to cm + 10", "10m * 10", "1m to cm + (10 + 5)"];
 
     for e in expressions {
         println!("\nExpression: {}", e);
         let l = Lexer::new(e);
         let tokens = l.tokenize();
 
-        println!("Tokens: {:?}", tokens);
+        // println!("Tokens: {:?}", tokens);
 
         let mut parser = Parser::new(tokens);
         match parser.parse() {
@@ -183,7 +178,7 @@ impl Parser {
             Operation::Add | Operation::Subtract => 1,
             Operation::Multiply | Operation::Divide => 2,
             Operation::Power => 3,
-            Operation::Convert => 0,
+            Operation::Convert => 5,
         }
     }
 
@@ -206,55 +201,77 @@ fn evaluate(expr: &Expression) -> Value {
             // Units by themselves don't have a numeric value
             panic!("Cannot evaluate a unit without a value")
         }
-        Expression::Binary { op, left, right } => {
-            match op {
-                Operation::Convert => {
-                    let from = match left.as_ref() {
-                        Expression::UnitValue { value, unit } => {
-                            LengthDimension::from_unit(&unit, *value).unwrap()
-                        }
-                        _ => panic!("Invalid conversion"),
-                    };
+        Expression::Binary { op, left, right } => match op {
+            Operation::Convert => {
+                let from = match left.as_ref() {
+                    Expression::UnitValue { value, unit } => {
+                        LengthDimension::from_unit(&unit, *value).unwrap()
+                    }
+                    _ => panic!("Invalid conversion"),
+                };
 
-                    let to_unit = match right.as_ref() {
-                        Expression::Unit(u) => LengthDimension::parse_unit(u).unwrap(),
-                        _ => panic!("Invalid conversion"),
-                    };
+                let to_unit = match right.as_ref() {
+                    Expression::Unit(u) => LengthDimension::parse_unit(u).unwrap(),
+                    _ => panic!("Invalid conversion"),
+                };
 
-                    let converted = from.convert_to(to_unit);
+                let converted = from.convert_to(to_unit);
 
-                    Value::UnitValue(UnitValue::new(
-                        converted.value(),
-                        to_unit.canonical_string().into(),
-                    ))
-                }
-                _ => {
-                    let left_val = evaluate(left);
-                    let right_val = evaluate(right);
+                Value::UnitValue(UnitValue::new(
+                    converted.value(),
+                    to_unit.canonical_string().into(),
+                ))
+            }
+            _ => {
+                let left_val = evaluate(left);
+                let right_val = evaluate(right);
 
-                    // For now, only handle Number + Number operations
-                    // TODO: Handle mixed operations with units
-                    match (left_val, right_val) {
-                        (Value::Number(l), Value::Number(r)) => {
-                            let result = match op {
-                                Operation::Add => l + r,
-                                Operation::Subtract => l - r,
-                                Operation::Multiply => l * r,
-                                Operation::Divide => l / r,
-                                Operation::Power => {
-                                    let l_val = l.0;
-                                    let r_val = r.0;
-                                    Number::from(l_val.powf(r_val))
-                                }
-                                _ => panic!("Unsupported operation in evaluation"),
-                            };
-                            Value::Number(result)
-                        }
-                        _ => panic!("Mixed unit/number operations not yet implemented"),
+                match (left_val, right_val) {
+                    (Value::Number(l), Value::Number(r)) => {
+                        let result = match op {
+                            Operation::Add => l + r,
+                            Operation::Subtract => l - r,
+                            Operation::Multiply => l * r,
+                            Operation::Divide => l / r,
+                            Operation::Power => {
+                                let l_val = l.0;
+                                let r_val = r.0;
+                                Number::from(l_val.powf(r_val))
+                            }
+                            _ => panic!("Unsupported operation in evaluation"),
+                        };
+                        Value::Number(result)
+                    }
+                    (Value::UnitValue(l), Value::UnitValue(r)) => {
+                        let result = match op {
+                            Operation::Add => l + r,
+                            Operation::Subtract => l - r,
+                            _ => panic!("Cannot multiply or divide unit values"),
+                        };
+                        Value::UnitValue(result)
+                    }
+                    (Value::UnitValue(l), Value::Number(r)) => {
+                        let result = match op {
+                            Operation::Add => l + r,
+                            Operation::Subtract => l - r,
+                            Operation::Multiply => l * r,
+                            Operation::Divide => l / r,
+                            _ => panic!("Unsupported operation"),
+                        };
+                        Value::UnitValue(result)
+                    }
+                    (Value::Number(l), Value::UnitValue(r)) => {
+                        let result = match op {
+                            Operation::Add => l + r,
+                            Operation::Subtract => l - r,
+                            Operation::Multiply => l * r,
+                            _ => panic!("Unsupported operation"),
+                        };
+                        Value::UnitValue(result)
                     }
                 }
             }
-        }
+        },
         Expression::Unary { op, operand } => {
             let val = evaluate(operand);
             match op {

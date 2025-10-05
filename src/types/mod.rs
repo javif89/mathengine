@@ -91,6 +91,77 @@ impl std::ops::Add<Number> for UnitValue {
     }
 }
 
+impl std::ops::Add<UnitValue> for Number {
+    type Output = UnitValue;
+    fn add(self, rhs: UnitValue) -> Self::Output {
+        UnitValue {
+            unit: rhs.unit,
+            value: self.0 + rhs.value,
+        }
+    }
+}
+
+impl std::ops::Sub for UnitValue {
+    type Output = UnitValue;
+    fn sub(self, rhs: Self) -> Self::Output {
+        // TODO: Check units match
+        UnitValue {
+            unit: self.unit,
+            value: self.value - rhs.value,
+        }
+    }
+}
+
+impl std::ops::Sub<Number> for UnitValue {
+    type Output = UnitValue;
+    fn sub(self, rhs: Number) -> Self::Output {
+        UnitValue {
+            unit: self.unit,
+            value: self.value - rhs.0,
+        }
+    }
+}
+
+impl std::ops::Sub<UnitValue> for Number {
+    type Output = UnitValue;
+    fn sub(self, rhs: UnitValue) -> Self::Output {
+        UnitValue {
+            unit: rhs.unit,
+            value: self.0 - rhs.value,
+        }
+    }
+}
+
+impl std::ops::Mul<Number> for UnitValue {
+    type Output = UnitValue;
+    fn mul(self, rhs: Number) -> Self::Output {
+        UnitValue {
+            unit: self.unit,
+            value: self.value * rhs.0,
+        }
+    }
+}
+
+impl std::ops::Mul<UnitValue> for Number {
+    type Output = UnitValue;
+    fn mul(self, rhs: UnitValue) -> Self::Output {
+        UnitValue {
+            unit: rhs.unit,
+            value: self.0 * rhs.value,
+        }
+    }
+}
+
+impl std::ops::Div<Number> for UnitValue {
+    type Output = UnitValue;
+    fn div(self, rhs: Number) -> Self::Output {
+        UnitValue {
+            unit: self.unit,
+            value: self.value / rhs.0,
+        }
+    }
+}
+
 impl UnitValue {
     pub fn new(value: f64, unit: String) -> Self {
         Self { value, unit }
