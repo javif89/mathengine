@@ -1,0 +1,13 @@
+[package]
+name = "mathengine-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mathengine"
+path = "src/main.rs"
+
+[dependencies]
+mathengine-lexer = { path = "../mathengine-lexer" }
+mathengine-parser = { path = "../mathengine-parser" }
+mathengine-evaluator = { path = "../mathengine-evaluator" }

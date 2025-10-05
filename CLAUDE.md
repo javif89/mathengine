@@ -26,11 +26,13 @@ This is a mathematical expression parser and evaluator with unit conversion capa
 
 ### Workspace Structure
 
-The project is organized as a Cargo workspace with three main crates:
+The project is organized as a Cargo workspace with five main crates following classic compiler architecture:
 
 1. **mathengine-lexer**: Tokenization and lexical analysis
 2. **mathengine-units**: Unit conversion system and dimension handling
-3. **mathengine-parser**: AST parsing, evaluation, and main binary
+3. **mathengine-parser**: AST definition and parsing logic
+4. **mathengine-evaluator**: Expression evaluation engine
+5. **mathengine-cli**: Command-line interface and main binary
 
 ### Core Components
 
@@ -47,27 +49,45 @@ The project is organized as a Cargo workspace with three main crates:
    - Error handling for unknown units
    - Canonical unit representations
 
-3. **Parser & Evaluator** (`mathengine-parser/src/main.rs`): Fully implemented parser and evaluator using Pratt parsing. Features:
-   - Recursive descent parsing with operator precedence
-   - Binary operations (left operator right)
-   - Unary operations (negation)
-   - Unit conversions
-   - Numeric literals and unit values
-   - Complete evaluation engine
+3. **Parser** (`mathengine-parser/src/`): AST definition and parsing logic using Pratt parsing. Features:
+   - Expression AST types in `ast.rs`
+   - Recursive descent parser with operator precedence
+   - Handles binary operations, unary operations, and unit values
+   - Clean separation between parsing and evaluation
 
-### Token Flow
+4. **Evaluator** (`mathengine-evaluator/src/lib.rs`): Expression evaluation engine. Features:
+   - Traverses AST to compute results
+   - Handles arithmetic operations and unit conversions
+   - Type-safe evaluation with proper error handling
+   - Supports mixed unit/number arithmetic
+
+5. **CLI** (`mathengine-cli/src/main.rs`): Command-line interface that orchestrates the pipeline:
+   - Lexer → Parser → Evaluator → Result
+   - Clean separation of concerns
+   - Easy to extend with different interfaces
+
+### Processing Pipeline
 Input String → Lexer (tokenization) → Parser (AST construction) → Evaluator (computation) → Result
 
 ### Key Design Decisions
-- Workspace structure for clean separation of concerns
-- No external dependencies - pure Rust implementation
-- Token-based approach allows for clear separation of concerns
-- Enum-based token representation provides type safety
-- Supports both mathematical expressions and unit conversions in a unified syntax
-- Pratt parsing for correct operator precedence and associativity
+- **Classic Compiler Architecture**: Clear separation of lexing, parsing, and evaluation phases
+- **Workspace Structure**: Each phase isolated in its own crate with minimal dependencies
+- **AST as Contract**: Expression AST serves as stable interface between parser and evaluator
+- **No external dependencies**: Pure Rust implementation
+- **Type Safety**: Enum-based token and AST representation
+- **Pratt Parsing**: Correct operator precedence and associativity
+- **Extensible Design**: Easy to add new frontends, backends, or optimization passes
+
+### Dependency Graph
+```
+CLI → Evaluator → Parser → Lexer
+              ↘         ↗
+                 Units
+```
 
 ## Current State
 
-- **Working**: Complete tokenization, parsing, evaluation, and unit conversion system
+- **Complete Pipeline**: Full lexer → parser → evaluator → CLI implementation
 - **Functional**: All mathematical operations and unit conversions working correctly
-- **Architecture**: Clean workspace structure with separate crates for lexer, units, and parser
+- **Clean Architecture**: Five-crate workspace with proper separation of concerns
+- **Ready for Extension**: Architecture supports adding new features, frontends, or optimization passes

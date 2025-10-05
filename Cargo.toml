@@ -3,7 +3,9 @@ resolver = "2"
 members = [
     "mathengine-units",
     "mathengine-lexer",
-    "mathengine-parser"
+    "mathengine-parser",
+    "mathengine-evaluator",
+    "mathengine-cli"
 ]
 
 [workspace.package]

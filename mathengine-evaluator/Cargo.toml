@@ -1,8 +1,9 @@
 [package]
-name = "mathengine-parser"
+name = "mathengine-evaluator"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 mathengine-lexer = { path = "../mathengine-lexer" }
+mathengine-parser = { path = "../mathengine-parser" }
 mathengine-units = { path = "../mathengine-units" }
