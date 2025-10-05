@@ -1,41 +1,44 @@
 use parsexpr::lexer::{self, Lexer, Operation, Token};
 
 fn main() {
-    let expressions = vec![
-        "2 + 3 * (100.50 - 4)",
-        "10m to feet",
-        "10m + 2",
-        "20lbs to kg",
-        "10 feet to in",
-    ];
-
-    for e in expressions {
-        let l = Lexer::new(e);
-        let tokens = l.tokenize();
-
-        println!("---{}---", e);
-        for t in tokens {
-            println!("{:?}", t);
-        }
-        println!("-------------");
-    }
+    // let expressions = vec![
+    //     "2 + 3 * (100.50 - 4)",
+    //     "10m to feet",
+    //     "10m + 2",
+    //     "20lbs to kg",
+    //     "10 feet to in",
+    //     "2^10",
+    // ];
 
     // for e in expressions {
-    //     println!("\nExpression: {}", e);
     //     let l = Lexer::new(e);
     //     let tokens = l.tokenize();
 
-    //     println!("Tokens: {:?}", tokens);
-
-    //     let mut parser = Parser::new(tokens);
-    //     match parser.parse() {
-    //         Ok(expr) => {
-    //             println!("AST: {:#?}", expr);
-    //             println!("Result: {}", evaluate(&expr));
-    //         }
-    //         Err(err) => println!("Parse error: {}", err),
+    //     println!("---{}---", e);
+    //     for t in tokens {
+    //         println!("{:?}", t);
     //     }
+    //     println!("-------------");
     // }
+
+    let expressions = vec!["2 + 3 * (100.50 - 4)", "2^10", "2^(1+1)"];
+
+    for e in expressions {
+        println!("\nExpression: {}", e);
+        let l = Lexer::new(e);
+        let tokens = l.tokenize();
+
+        println!("Tokens: {:?}", tokens);
+
+        let mut parser = Parser::new(tokens);
+        match parser.parse() {
+            Ok(expr) => {
+                println!("AST: {:#?}", expr);
+                println!("Result: {}", evaluate(&expr));
+            }
+            Err(err) => println!("Parse error: {}", err),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -157,13 +160,17 @@ impl Parser {
         match op {
             Operation::Add | Operation::Subtract => 1,
             Operation::Multiply | Operation::Divide => 2,
+            Operation::Power => 3,
             Operation::Convert => 0,
         }
     }
 
     // Determines if an operator is right-associative (currently all ops are left-associative)
-    fn is_right_associative(&self, _op: &Operation) -> bool {
-        false
+    fn is_right_associative(&self, op: &Operation) -> bool {
+        match op {
+            Operation::Power => true, // Power is right-associative: 2^3^4 = 2^(3^4)
+            _ => false,
+        }
     }
 }
 
@@ -178,6 +185,7 @@ fn evaluate(expr: &Expression) -> f64 {
                 Operation::Subtract => left_val - right_val,
                 Operation::Multiply => left_val * right_val,
                 Operation::Divide => left_val / right_val,
+                Operation::Power => left_val.powf(right_val),
                 _ => panic!("Unsupported operation in evaluation"),
             }
         }

@@ -16,6 +16,7 @@ pub enum Operation {
     Subtract,
     Divide,
     Multiply,
+    Power,
     Convert,
 }
 
@@ -37,15 +38,25 @@ impl Lexer {
             match ch {
                 '0'..='9' => {
                     let num = self.lex_number(ch, &mut chars);
-                    // Check if there's a unit attached
-                    if let Some(c) = chars.peek()
-                        && c.is_alphabetic()
-                    {
-                        let unit = self.lex_identifier(chars.next().unwrap(), &mut chars);
-                        tokens.push(Token::UnitValue {
-                            value: num.parse::<f64>().unwrap(),
-                            unit,
-                        });
+                    // Skip whitespace after number
+                    while let Some(&c) = chars.peek() {
+                        if c.is_whitespace() {
+                            chars.next();
+                        } else {
+                            break;
+                        }
+                    }
+                    // Check if there's a unit attached (with or without space)
+                    if let Some(&c) = chars.peek() {
+                        if c.is_alphabetic() {
+                            let unit = self.lex_identifier(chars.next().unwrap(), &mut chars);
+                            tokens.push(Token::UnitValue {
+                                value: num.parse::<f64>().unwrap(),
+                                unit,
+                            });
+                        } else {
+                            tokens.push(Token::Number(num.parse::<f64>().unwrap()));
+                        }
                     } else {
                         tokens.push(Token::Number(num.parse::<f64>().unwrap()));
                     }
@@ -64,6 +75,7 @@ impl Lexer {
                 '-' => tokens.push(Token::Operation(Operation::Subtract)),
                 '*' => tokens.push(Token::Operation(Operation::Multiply)),
                 '/' => tokens.push(Token::Operation(Operation::Divide)),
+                '^' => tokens.push(Token::Operation(Operation::Power)),
                 '(' => tokens.push(Token::Lparen),
                 ')' => tokens.push(Token::Rparen),
                 c if c.is_whitespace() => continue,
