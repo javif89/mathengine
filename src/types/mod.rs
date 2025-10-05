@@ -1,0 +1,92 @@
+use std::fmt::Display;
+
+#[derive(Debug)]
+pub struct Number(pub f64);
+
+impl From<f64> for Number {
+    fn from(value: f64) -> Self {
+        Self(value)
+    }
+}
+
+impl Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::ops::Add for Number {
+    type Output = Number;
+    fn add(self, rhs: Number) -> Self::Output {
+        Number(self.0 + rhs.0)
+    }
+}
+
+impl std::ops::Sub for Number {
+    type Output = Number;
+    fn sub(self, rhs: Number) -> Self::Output {
+        Number(self.0 - rhs.0)
+    }
+}
+
+impl std::ops::Mul for Number {
+    type Output = Number;
+    fn mul(self, rhs: Number) -> Self::Output {
+        Number(self.0 * rhs.0)
+    }
+}
+
+impl std::ops::Div for Number {
+    type Output = Number;
+    fn div(self, rhs: Number) -> Self::Output {
+        Number(self.0 / rhs.0)
+    }
+}
+
+impl std::ops::Rem for Number {
+    type Output = Number;
+    fn rem(self, rhs: Number) -> Self::Output {
+        Number(self.0 % rhs.0)
+    }
+}
+
+impl std::ops::Neg for Number {
+    type Output = Number;
+    fn neg(self) -> Self::Output {
+        Number(-self.0)
+    }
+}
+
+#[derive(Debug)]
+pub struct UnitValue {
+    value: f64,
+    unit: String,
+}
+
+impl Display for UnitValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.value, self.unit)
+    }
+}
+
+impl std::ops::Add for UnitValue {
+    type Output = UnitValue;
+    fn add(self, rhs: Self) -> Self::Output {
+        // TODO: When I implement conversions, we have to convert
+        // to the base unit and that will be the result
+        UnitValue {
+            unit: self.unit,
+            value: self.value + rhs.value,
+        }
+    }
+}
+
+impl std::ops::Add<Number> for UnitValue {
+    type Output = UnitValue;
+    fn add(self, rhs: Number) -> Self::Output {
+        UnitValue {
+            unit: self.unit,
+            value: self.value + rhs.0,
+        }
+    }
+}

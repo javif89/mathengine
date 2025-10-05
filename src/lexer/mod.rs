@@ -1,42 +1,22 @@
 use std::{iter::Peekable, str::Chars};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Operation(Operation),
     Number(f64),
-    Unit(Unit),
+    UnitValue { value: f64, unit: String },
+    Unit(String),
     Lparen,
     Rparen,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operation {
     Add,
     Subtract,
     Divide,
     Multiply,
     Convert,
-}
-
-#[derive(Debug)]
-pub enum Unit {
-    Temperature(TemperatureUnit),
-    Measurement(MeasurementUnit),
-}
-
-#[derive(Debug)]
-pub enum TemperatureUnit {
-    Farenheit,
-    Celcius,
-}
-
-#[derive(Debug)]
-pub enum MeasurementUnit {
-    Feet,
-    Inches,
-    Meters,
-    Centimeters,
-    Milimiters,
 }
 
 pub struct Lexer {
@@ -57,21 +37,25 @@ impl Lexer {
             match ch {
                 '0'..='9' => {
                     let num = self.lex_number(ch, &mut chars);
-                    tokens.push(Token::Number(num.parse::<f64>().unwrap()));
+                    // Check if there's a unit attached
+                    if let Some(c) = chars.peek()
+                        && c.is_alphabetic()
+                    {
+                        let unit = self.lex_identifier(chars.next().unwrap(), &mut chars);
+                        tokens.push(Token::UnitValue {
+                            value: num.parse::<f64>().unwrap(),
+                            unit,
+                        });
+                    } else {
+                        tokens.push(Token::Number(num.parse::<f64>().unwrap()));
+                    }
                 }
                 c if c.is_alphabetic() => {
                     let ident = self.lex_identifier(c, &mut chars);
 
                     let tok: Token = match ident.to_lowercase().as_ref() {
                         "to" => Token::Operation(Operation::Convert),
-                        "c" => Token::Unit(Unit::Temperature(TemperatureUnit::Celcius)),
-                        "f" => Token::Unit(Unit::Temperature(TemperatureUnit::Farenheit)),
-                        "feet" => Token::Unit(Unit::Measurement(MeasurementUnit::Feet)),
-                        "in" => Token::Unit(Unit::Measurement(MeasurementUnit::Feet)),
-                        "m" => Token::Unit(Unit::Measurement(MeasurementUnit::Meters)),
-                        "cm" => Token::Unit(Unit::Measurement(MeasurementUnit::Centimeters)),
-                        "mm" => Token::Unit(Unit::Measurement(MeasurementUnit::Feet)),
-                        _ => panic!("Crash :("),
+                        v => Token::Unit(v.into()),
                     };
 
                     tokens.push(tok);
