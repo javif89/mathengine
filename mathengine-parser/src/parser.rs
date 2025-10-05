@@ -1,6 +1,7 @@
 use mathengine_lexer::{Operation, Token};
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 use crate::ast::Expression;
+use crate::error::ParseError;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -13,20 +14,25 @@ impl Parser {
     }
 
     // Entry point for parsing - parses the entire token stream and ensures all tokens are consumed
-    pub fn parse(&mut self) -> Result<Expression, String> {
+    pub fn parse(&mut self) -> Result<Expression, ParseError> {
+        if self.tokens.is_empty() {
+            return Err(ParseError::EmptyTokenStream);
+        }
+
         let expr = self.parse_expression(0)?;
         if self.pos < self.tokens.len() {
-            return Err(format!(
-                "Unexpected token at position {}: {:?}",
-                self.pos, self.tokens[self.pos]
-            ));
+            return Err(ParseError::UnexpectedToken {
+                expected: "end of input".to_string(),
+                found: self.tokens[self.pos].clone(),
+                position: self.pos,
+            });
         }
         Ok(expr)
     }
 
     // Pratt parsing algorithm - handles binary operators with correct precedence and associativity
     // min_precedence determines the minimum operator precedence this call will handle
-    fn parse_expression(&mut self, min_precedence: u8) -> Result<Expression, String> {
+    fn parse_expression(&mut self, min_precedence: u8) -> Result<Expression, ParseError> {
         let mut left = self.parse_primary()?;
 
         while let Some(token) = self.peek() {
@@ -63,7 +69,8 @@ impl Parser {
     }
 
     // Parses primary expressions: numbers, parenthesized expressions, and unary operators
-    fn parse_primary(&mut self) -> Result<Expression, String> {
+    fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+        let start_pos = self.pos;
         match self.advance() {
             Some(Token::Number(n)) => Ok(Expression::Number(*n)),
             Some(Token::UnitValue { value, unit }) => Ok(Expression::UnitValue {
@@ -75,8 +82,14 @@ impl Parser {
                 let expr = self.parse_expression(0)?;
                 match self.advance() {
                     Some(Token::Rparen) => Ok(expr),
-                    Some(other) => Err(format!("Expected ')', found {:?}", other)),
-                    None => Err("Expected ')', found end of input".to_string()),
+                    Some(other) => Err(ParseError::UnexpectedToken {
+                        expected: "')'".to_string(),
+                        found: other.clone(),
+                        position: self.pos - 1,
+                    }),
+                    None => Err(ParseError::UnexpectedEndOfInput {
+                        expected: "')'".to_string(),
+                    }),
                 }
             }
             Some(Token::Operation(Operation::Subtract)) => {
@@ -86,8 +99,14 @@ impl Parser {
                     operand: Box::new(operand),
                 })
             }
-            Some(token) => Err(format!("Unexpected token: {:?}", token)),
-            None => Err("Unexpected end of input".to_string()),
+            Some(token) => Err(ParseError::UnexpectedToken {
+                expected: "number, unit value, '(', or unary operator".to_string(),
+                found: token.clone(),
+                position: start_pos,
+            }),
+            None => Err(ParseError::UnexpectedEndOfInput {
+                expected: "expression".to_string(),
+            }),
         }
     }
 

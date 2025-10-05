@@ -85,9 +85,42 @@ CLI → Evaluator → Parser → Lexer
                  Units
 ```
 
+## Error Handling
+
+The project implements comprehensive error handling across the entire pipeline with **zero panics** in production code:
+
+### Error Types by Crate
+
+**mathengine-lexer**: `LexError`
+- `UnexpectedCharacter`: Invalid characters with position information
+- `InvalidNumber`: Malformed numeric literals
+- `EmptyInput`: Empty input validation
+
+**mathengine-parser**: `ParseError`
+- `UnexpectedToken`: Token mismatch with detailed position info
+- `UnexpectedEndOfInput`: Premature end of token stream
+- `InvalidExpression`: Malformed expressions
+- `EmptyTokenStream`: Empty token validation
+
+**mathengine-evaluator**: `EvalError`
+- `DivisionByZero`: Mathematical errors
+- `IncompatibleUnits`: Unit type mismatches
+- `UnknownUnit`: Invalid unit identifiers
+- `InvalidConversion`: Cross-dimension conversion attempts
+- `UnsupportedOperation`: Type-operation incompatibilities
+
+### Error Propagation
+
+- All errors implement `Display` and `std::error::Error`
+- Clean `Result<T, E>` propagation through the pipeline
+- Position information preserved where applicable
+- Human-readable error messages at CLI level
+
 ## Current State
 
 - **Complete Pipeline**: Full lexer → parser → evaluator → CLI implementation
+- **Robust Error Handling**: Comprehensive error types with zero panics
 - **Functional**: All mathematical operations and unit conversions working correctly
 - **Clean Architecture**: Five-crate workspace with proper separation of concerns
+- **Production Ready**: Graceful error handling and user-friendly error messages
 - **Ready for Extension**: Architecture supports adding new features, frontends, or optimization passes

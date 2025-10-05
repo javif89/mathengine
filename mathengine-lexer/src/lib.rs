@@ -1,6 +1,9 @@
 use std::{iter::Peekable, str::Chars};
 
-#[derive(Debug, Clone)]
+pub mod error;
+pub use error::LexError;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Operation(Operation),
     Number(f64),
@@ -10,7 +13,7 @@ pub enum Token {
     Rparen,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Add,
     Subtract,
@@ -31,17 +34,27 @@ impl Lexer {
         Self { source }
     }
 
-    pub fn tokenize(self) -> Vec<Token> {
+    pub fn tokenize(self) -> Result<Vec<Token>, LexError> {
+        if self.source.trim().is_empty() {
+            return Err(LexError::EmptyInput);
+        }
+
         let mut tokens = Vec::new();
         let mut chars = self.source.chars().peekable();
+        let mut position = 0;
+
         while let Some(ch) = chars.next() {
             match ch {
                 '0'..='9' => {
+                    let start_pos = position;
                     let num = self.lex_number(ch, &mut chars);
+                    position += num.len();
+
                     // Skip whitespace after number
                     while let Some(&c) = chars.peek() {
                         if c.is_whitespace() {
                             chars.next();
+                            position += 1;
                         } else {
                             break;
                         }
@@ -50,19 +63,30 @@ impl Lexer {
                     if let Some(&c) = chars.peek() {
                         if c.is_alphabetic() {
                             let unit = self.lex_identifier(chars.next().unwrap(), &mut chars);
-                            tokens.push(Token::UnitValue {
-                                value: num.parse::<f64>().unwrap(),
-                                unit,
-                            });
+                            position += unit.len();
+                            let value = num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
+                                input: num.clone(),
+                                position: start_pos,
+                            })?;
+                            tokens.push(Token::UnitValue { value, unit });
                         } else {
-                            tokens.push(Token::Number(num.parse::<f64>().unwrap()));
+                            let value = num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
+                                input: num.clone(),
+                                position: start_pos,
+                            })?;
+                            tokens.push(Token::Number(value));
                         }
                     } else {
-                        tokens.push(Token::Number(num.parse::<f64>().unwrap()));
+                        let value = num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
+                            input: num.clone(),
+                            position: start_pos,
+                        })?;
+                        tokens.push(Token::Number(value));
                     }
                 }
                 c if c.is_alphabetic() => {
                     let ident = self.lex_identifier(c, &mut chars);
+                    position += ident.len();
 
                     let tok: Token = match ident.to_lowercase().as_ref() {
                         "to" => Token::Operation(Operation::Convert),
@@ -71,18 +95,44 @@ impl Lexer {
 
                     tokens.push(tok);
                 }
-                '+' => tokens.push(Token::Operation(Operation::Add)),
-                '-' => tokens.push(Token::Operation(Operation::Subtract)),
-                '*' => tokens.push(Token::Operation(Operation::Multiply)),
-                '/' => tokens.push(Token::Operation(Operation::Divide)),
-                '^' => tokens.push(Token::Operation(Operation::Power)),
-                '(' => tokens.push(Token::Lparen),
-                ')' => tokens.push(Token::Rparen),
-                c if c.is_whitespace() => continue,
-                _ => panic!("Unexpected character: {}", ch),
+                '+' => {
+                    tokens.push(Token::Operation(Operation::Add));
+                    position += 1;
+                }
+                '-' => {
+                    tokens.push(Token::Operation(Operation::Subtract));
+                    position += 1;
+                }
+                '*' => {
+                    tokens.push(Token::Operation(Operation::Multiply));
+                    position += 1;
+                }
+                '/' => {
+                    tokens.push(Token::Operation(Operation::Divide));
+                    position += 1;
+                }
+                '^' => {
+                    tokens.push(Token::Operation(Operation::Power));
+                    position += 1;
+                }
+                '(' => {
+                    tokens.push(Token::Lparen);
+                    position += 1;
+                }
+                ')' => {
+                    tokens.push(Token::Rparen);
+                    position += 1;
+                }
+                c if c.is_whitespace() => {
+                    position += 1;
+                    continue;
+                }
+                _ => {
+                    return Err(LexError::UnexpectedCharacter { char: ch, position });
+                }
             }
         }
-        tokens
+        Ok(tokens)
     }
 
     fn lex_number(&self, first_digit: char, chars: &mut Peekable<Chars<'_>>) -> String {
