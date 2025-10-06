@@ -16,6 +16,9 @@ test:
 release-dry:
 	cargo release --dry-run --no-verify --no-push
 
+release:
+	cargo release --execute 
+
 publish:
 	cargo publish -p mathengine-units
 	cargo publish -p mathengine-lexer
