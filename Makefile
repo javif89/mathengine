@@ -17,7 +17,7 @@ release-dry:
 	cargo release --dry-run --no-verify --no-push
 
 release:
-	cargo release --execute 
+	cargo release --execute --exclude mathengine-cli
 
 publish:
 	cargo publish -p mathengine-units
