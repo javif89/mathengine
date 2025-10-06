@@ -13,6 +13,9 @@ lint-fix:
 test:
 	cargo test --workspace
 
+release-dry:
+	cargo release --dry-run --no-verify --no-push
+
 publish:
 	cargo publish -p mathengine-units
 	cargo publish -p mathengine-lexer
