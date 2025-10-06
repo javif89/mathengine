@@ -5,7 +5,8 @@ members = [
     "mathengine-lexer",
     "mathengine-parser",
     "mathengine-evaluator",
-    "mathengine-cli", "mathengine",
+    "mathengine-cli",
+    "mathengine",
 ]
 
 [workspace.package]
