@@ -2,5 +2,14 @@
 name = "mathengine-lexer"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+description = "High-performance lexical analyzer for mathematical expressions with unit support"
 
 [dependencies]

@@ -30,8 +30,16 @@ impl fmt::Display for EvalError {
             EvalError::DivisionByZero => {
                 write!(f, "Division by zero")
             }
-            EvalError::IncompatibleUnits { left_unit, right_unit, operation } => {
-                write!(f, "Cannot {} incompatible units: {} and {}", operation, left_unit, right_unit)
+            EvalError::IncompatibleUnits {
+                left_unit,
+                right_unit,
+                operation,
+            } => {
+                write!(
+                    f,
+                    "Cannot {} incompatible units: {} and {}",
+                    operation, left_unit, right_unit
+                )
             }
             EvalError::UnknownUnit { unit } => {
                 write!(f, "Unknown unit: '{}'", unit)
@@ -39,8 +47,15 @@ impl fmt::Display for EvalError {
             EvalError::InvalidConversion { from_unit, to_unit } => {
                 write!(f, "Cannot convert from '{}' to '{}'", from_unit, to_unit)
             }
-            EvalError::UnsupportedOperation { operation, operand_type } => {
-                write!(f, "Unsupported operation '{}' for {}", operation, operand_type)
+            EvalError::UnsupportedOperation {
+                operation,
+                operand_type,
+            } => {
+                write!(
+                    f,
+                    "Unsupported operation '{}' for {}",
+                    operation, operand_type
+                )
             }
             EvalError::InvalidUnitExpression { message } => {
                 write!(f, "Invalid unit expression: {}", message)

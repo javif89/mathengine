@@ -2,6 +2,15 @@
 name = "mathengine-parser"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+description = "Robust parser for mathematical expressions with unit support using Pratt parsing"
 
 [dependencies]
 mathengine-lexer = { path = "../mathengine-lexer" }

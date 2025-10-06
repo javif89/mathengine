@@ -11,7 +11,11 @@ impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LexError::UnexpectedCharacter { char, position } => {
-                write!(f, "Unexpected character '{}' at position {}", char, position)
+                write!(
+                    f,
+                    "Unexpected character '{}' at position {}",
+                    char, position
+                )
             }
             LexError::InvalidNumber { input, position } => {
                 write!(f, "Invalid number '{}' at position {}", input, position)

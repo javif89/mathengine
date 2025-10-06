@@ -2,6 +2,13 @@
 name = "mathengine-cli"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "Command-line interface for the mathengine mathematical expression evaluator"
+publish = false
 
 [[bin]]
 name = "mathengine"

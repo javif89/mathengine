@@ -1,7 +1,7 @@
-use mathengine_lexer::{Operation, Token};
-use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 use crate::ast::Expression;
 use crate::error::ParseError;
+use mathengine_lexer::{Operation, Token};
+use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
 pub struct Parser {
     tokens: Vec<Token>,

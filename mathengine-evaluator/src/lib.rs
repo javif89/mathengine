@@ -1,5 +1,8 @@
 use mathengine_lexer::Operation;
-use mathengine_parser::{types::{Number, UnitValue, Value}, Expression};
+use mathengine_parser::{
+    Expression,
+    types::{Number, UnitValue, Value},
+};
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
 pub mod error;
@@ -11,33 +14,41 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
         Expression::UnitValue { value, unit } => {
             Ok(Value::UnitValue(UnitValue::new(*value, unit.clone())))
         }
-        Expression::Unit(_unit) => {
-            Err(EvalError::InvalidUnitExpression {
-                message: "Cannot evaluate a unit without a value".to_string(),
-            })
-        }
+        Expression::Unit(_unit) => Err(EvalError::InvalidUnitExpression {
+            message: "Cannot evaluate a unit without a value".to_string(),
+        }),
         Expression::Binary { op, left, right } => match op {
             Operation::Convert => {
                 let (value, from_unit) = match left.as_ref() {
                     Expression::UnitValue { value, unit } => (*value, unit),
-                    _ => return Err(EvalError::InvalidUnitExpression {
-                        message: "Left side of conversion must be a unit value".to_string(),
-                    }),
+                    _ => {
+                        return Err(EvalError::InvalidUnitExpression {
+                            message: "Left side of conversion must be a unit value".to_string(),
+                        });
+                    }
                 };
 
                 let to_unit = match right.as_ref() {
                     Expression::Unit(u) => u,
-                    _ => return Err(EvalError::InvalidUnitExpression {
-                        message: "Right side of conversion must be a unit".to_string(),
-                    }),
+                    _ => {
+                        return Err(EvalError::InvalidUnitExpression {
+                            message: "Right side of conversion must be a unit".to_string(),
+                        });
+                    }
                 };
 
                 match get_dimension_type(&from_unit) {
                     DimensionType::Length => {
-                        let from = LengthDimension::from_unit(&from_unit, value)
-                            .map_err(|_| EvalError::UnknownUnit { unit: from_unit.clone() })?;
-                        let to = LengthDimension::parse_unit(to_unit)
-                            .map_err(|_| EvalError::UnknownUnit { unit: to_unit.clone() })?;
+                        let from = LengthDimension::from_unit(&from_unit, value).map_err(|_| {
+                            EvalError::UnknownUnit {
+                                unit: from_unit.clone(),
+                            }
+                        })?;
+                        let to = LengthDimension::parse_unit(to_unit).map_err(|_| {
+                            EvalError::UnknownUnit {
+                                unit: to_unit.clone(),
+                            }
+                        })?;
                         let converted = from.convert_to(to);
                         Ok(Value::UnitValue(UnitValue::new(
                             converted.value(),
@@ -45,10 +56,17 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                         )))
                     }
                     DimensionType::Temperature => {
-                        let from = TemperatureDimension::from_unit(&from_unit, value)
-                            .map_err(|_| EvalError::UnknownUnit { unit: from_unit.clone() })?;
-                        let to = TemperatureDimension::parse_unit(to_unit)
-                            .map_err(|_| EvalError::UnknownUnit { unit: to_unit.clone() })?;
+                        let from =
+                            TemperatureDimension::from_unit(&from_unit, value).map_err(|_| {
+                                EvalError::UnknownUnit {
+                                    unit: from_unit.clone(),
+                                }
+                            })?;
+                        let to = TemperatureDimension::parse_unit(to_unit).map_err(|_| {
+                            EvalError::UnknownUnit {
+                                unit: to_unit.clone(),
+                            }
+                        })?;
                         let converted = from.convert_to(to);
                         Ok(Value::UnitValue(UnitValue::new(
                             converted.value(),

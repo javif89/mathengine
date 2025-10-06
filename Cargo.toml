@@ -5,9 +5,17 @@ members = [
     "mathengine-lexer",
     "mathengine-parser",
     "mathengine-evaluator",
-    "mathengine-cli"
+    "mathengine-cli",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+authors = ["Javier Feliz <javif89>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/javif89/mathengine"
+homepage = "https://github.com/javif89/mathengine"
+documentation = "https://docs.rs/mathengine"
+keywords = ["math", "parser", "calculator", "units", "conversion"]
+categories = ["parsing", "mathematics", "science"]
+rust-version = "1.85"

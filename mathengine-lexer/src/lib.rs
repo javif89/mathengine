@@ -64,16 +64,18 @@ impl Lexer {
                         if c.is_alphabetic() {
                             let unit = self.lex_identifier(chars.next().unwrap(), &mut chars);
                             position += unit.len();
-                            let value = num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
-                                input: num.clone(),
-                                position: start_pos,
-                            })?;
+                            let value =
+                                num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
+                                    input: num.clone(),
+                                    position: start_pos,
+                                })?;
                             tokens.push(Token::UnitValue { value, unit });
                         } else {
-                            let value = num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
-                                input: num.clone(),
-                                position: start_pos,
-                            })?;
+                            let value =
+                                num.parse::<f64>().map_err(|_| LexError::InvalidNumber {
+                                    input: num.clone(),
+                                    position: start_pos,
+                                })?;
                             tokens.push(Token::Number(value));
                         }
                     } else {

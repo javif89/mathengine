@@ -1,6 +1,6 @@
-use mathengine_lexer::{Lexer, LexError};
-use mathengine_parser::{Parser, ParseError};
-use mathengine_evaluator::{evaluate, EvalError};
+use mathengine_evaluator::{EvalError, evaluate};
+use mathengine_lexer::{LexError, Lexer};
+use mathengine_parser::{ParseError, Parser};
 
 fn main() {
     let expressions = vec![
