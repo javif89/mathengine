@@ -65,3 +65,23 @@ impl fmt::Display for EvalError {
 }
 
 impl std::error::Error for EvalError {}
+
+impl From<mathengine_parser::types::ConversionError> for EvalError {
+    fn from(err: mathengine_parser::types::ConversionError) -> Self {
+        match err {
+            mathengine_parser::types::ConversionError::UnknownUnit(unit) => {
+                EvalError::UnknownUnit { unit }
+            }
+            mathengine_parser::types::ConversionError::CrossDimension => {
+                EvalError::InvalidUnitExpression {
+                    message: "Cannot convert between different dimensions".to_string(),
+                }
+            }
+            mathengine_parser::types::ConversionError::Failed => {
+                EvalError::InvalidUnitExpression {
+                    message: "Conversion failed".to_string(),
+                }
+            }
+        }
+    }
+}
