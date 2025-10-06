@@ -9,3 +9,10 @@ lint:
 
 lint-fix:
 	cargo clippy --workspace --fix
+
+publish:
+	cargo publish -p mathengine-units
+	cargo publish -p mathengine-lexer
+	cargo publish -p mathengine-parser
+	cargo publish -p mathengine-evaluator
+	cargo publish -p mathengine

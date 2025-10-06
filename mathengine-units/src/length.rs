@@ -31,14 +31,31 @@ impl LengthDimension {
     pub const YARDS: LengthUnit = LengthUnit::Yard;
     pub const MILES: LengthUnit = LengthUnit::Mile;
 
-    /// Create a LengthDimension from a unit string and value
-    /// Example: LengthDimension::from_unit("cm", 10.0)
+    /// Create a LengthDimension from a unit string and value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::length::LengthDimension;
+    ///
+    /// let length = LengthDimension::from_unit("cm", 100.0).unwrap();
+    /// assert_eq!(length.value(), 100.0);
+    /// ```
     pub fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
         let unit = Self::parse_unit(unit_str)?;
         Ok(Self { value, unit })
     }
 
-    /// Create a LengthDimension directly with a LengthUnit
+    /// Create a LengthDimension directly with a LengthUnit.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::length::{LengthDimension, LengthUnit};
+    ///
+    /// let length = LengthDimension::new(5.0, LengthUnit::Meter);
+    /// assert_eq!(length.value(), 5.0);
+    /// ```
     pub fn new(value: f64, unit: LengthUnit) -> Self {
         Self { value, unit }
     }
@@ -86,7 +103,17 @@ impl LengthDimension {
         }
     }
 
-    /// Convert this length to a different unit
+    /// Convert this length to a different unit.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::length::{LengthDimension, LengthUnit};
+    ///
+    /// let meters = LengthDimension::new(1.0, LengthUnit::Meter);
+    /// let cm = meters.convert_to(LengthUnit::Centimeter);
+    /// assert_eq!(cm.value(), 100.0);
+    /// ```
     pub fn convert_to(&self, target: LengthUnit) -> Self {
         if self.unit == target {
             return self.clone();
@@ -142,12 +169,12 @@ impl LengthDimension {
         }
     }
 
-    /// Get the numeric value
+    /// Get the numeric value.
     pub fn value(&self) -> f64 {
         self.value
     }
 
-    /// Get the unit
+    /// Get the unit.
     pub fn unit(&self) -> LengthUnit {
         self.unit
     }

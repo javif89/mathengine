@@ -51,19 +51,46 @@ impl From<EvalError> for MathEngineError {
     }
 }
 
-/// Evaluate a mathematical expression and return the computed value
+/// Evaluate a mathematical expression and return the computed value.
 ///
-/// # Example
+/// This function supports:
+/// - Basic arithmetic: `+`, `-`, `*`, `/`, `^` (power)
+/// - Parentheses for grouping: `(1 + 2) * 3`
+/// - Unit arithmetic: `1m + 50cm`, `2ft - 6in`
+/// - Unit conversions: `100cm to meters`, `32F to celsius`
+/// - Mixed expressions: `(1m + 2m) to feet`
 ///
+/// # Examples
+///
+/// Basic arithmetic:
 /// ```
 /// use mathengine::evaluate_expression;
 ///
 /// let result = evaluate_expression("2 + 3 * 4").unwrap();
 /// assert_eq!(result.to_string(), "14");
-///
-/// let result = evaluate_expression("10m to feet").unwrap();
-/// // result contains the converted value with unit
 /// ```
+///
+/// Unit arithmetic and conversion:
+/// ```
+/// use mathengine::evaluate_expression;
+///
+/// // Unit arithmetic returns result in base units (meters for length)
+/// let result = evaluate_expression("1m + 50cm").unwrap();
+/// assert_eq!(result.to_string(), "1.5m");
+///
+/// // Unit conversion
+/// let result = evaluate_expression("100cm to meters").unwrap();
+/// assert_eq!(result.to_string(), "1m");
+///
+/// // Complex expressions with conversion
+/// let result = evaluate_expression("(1m + 2m) to feet").unwrap();
+/// // Returns approximately 9.84ft
+/// ```
+///
+/// # Supported Units
+///
+/// **Length**: m, cm, mm, km, ft, in, yd, mi
+/// **Temperature**: C, F, K
 ///
 /// # Errors
 ///

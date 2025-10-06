@@ -1,6 +1,7 @@
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 use std::fmt::Display;
 
+/// Represents a numeric value in mathematical expressions.
 #[derive(Debug)]
 pub struct Number(pub f64);
 
@@ -79,6 +80,10 @@ impl DimensionType {
     }
 }
 
+/// Represents a value with an associated unit (e.g., "5 meters", "32 fahrenheit").
+///
+/// UnitValues automatically track their dimension type (Length, Temperature, etc.)
+/// and support arithmetic operations with automatic unit conversion to base units.
 #[derive(Debug)]
 pub struct UnitValue {
     value: f64,
@@ -87,6 +92,16 @@ pub struct UnitValue {
 }
 
 impl UnitValue {
+    /// Create a new UnitValue with the given value and unit string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length = UnitValue::new(5.0, "meters".to_string());
+    /// let temp = UnitValue::new(32.0, "F".to_string());
+    /// ```
     pub fn new(value: f64, unit: String) -> Self {
         let dimension = DimensionType::from_unit(&unit);
         Self {
@@ -96,24 +111,36 @@ impl UnitValue {
         }
     }
 
+    /// Get the numeric value.
     pub fn value(&self) -> f64 {
         self.value
     }
 
+    /// Get the unit string.
     pub fn unit(&self) -> &str {
         &self.unit
     }
 
+    /// Get the dimension type of this unit value.
     pub fn dimension(&self) -> DimensionType {
         self.dimension
     }
 
-    /// Get the "canonical" name for a unit for standardizing
-    /// display.
-    /// For example
-    /// "meters" -> "m"
-    /// "inches" -> "in"
-    /// "celcius" -> "C"
+    /// Get the canonical unit name for display purposes.
+    ///
+    /// Converts unit names to their standard abbreviated forms:
+    /// - "meters" → "m"
+    /// - "inches" → "in"
+    /// - "celsius" → "C"
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length = UnitValue::new(5.0, "meters".to_string());
+    /// assert_eq!(length.canonical_unit_name(), "m");
+    /// ```
     pub fn canonical_unit_name(&self) -> String {
         match self.dimension {
             DimensionType::Length => LengthDimension::parse_unit(&self.unit)
@@ -285,10 +312,24 @@ impl std::ops::Div<Number> for UnitValue {
     }
 }
 
-/// Unified value type for evaluation results
+/// Unified value type for evaluation results.
+///
+/// This enum represents the result of evaluating a mathematical expression,
+/// which can be either a plain number or a value with a unit.
+///
+/// # Examples
+///
+/// ```
+/// use mathengine_parser::types::{Value, Number, UnitValue};
+///
+/// let num_result = Value::Number(Number::from(42.0));
+/// let unit_result = Value::UnitValue(UnitValue::new(5.0, "m".to_string()));
+/// ```
 #[derive(Debug)]
 pub enum Value {
+    /// A plain numeric value
     Number(Number),
+    /// A value with an associated unit
     UnitValue(UnitValue),
 }
 

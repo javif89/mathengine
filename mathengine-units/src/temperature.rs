@@ -20,14 +20,31 @@ impl TemperatureDimension {
     pub const CELCIUS: TemperatureUnit = TemperatureUnit::Celcius;
     pub const FARENHEIR: TemperatureUnit = TemperatureUnit::Farenheit;
 
-    /// Create a LengthDimension from a unit string and value
-    /// Example: LengthDimension::from_unit("cm", 10.0)
+    /// Create a TemperatureDimension from a unit string and value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::temperature::TemperatureDimension;
+    ///
+    /// let temp = TemperatureDimension::from_unit("C", 25.0).unwrap();
+    /// assert_eq!(temp.value(), 25.0);
+    /// ```
     pub fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
         let unit = Self::parse_unit(unit_str)?;
         Ok(Self { value, unit })
     }
 
-    /// Create a LengthDimension directly with a LengthUnit
+    /// Create a TemperatureDimension directly with a TemperatureUnit.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::temperature::{TemperatureDimension, TemperatureUnit};
+    ///
+    /// let temp = TemperatureDimension::new(32.0, TemperatureUnit::Farenheit);
+    /// assert_eq!(temp.value(), 32.0);
+    /// ```
     pub fn new(value: f64, unit: TemperatureUnit) -> Self {
         Self { value, unit }
     }
@@ -60,7 +77,17 @@ impl TemperatureDimension {
         }
     }
 
-    /// Convert this temperature to a different unit
+    /// Convert this temperature to a different unit.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_units::temperature::{TemperatureDimension, TemperatureUnit};
+    ///
+    /// let celsius = TemperatureDimension::new(0.0, TemperatureUnit::Celcius);
+    /// let fahrenheit = celsius.convert_to(TemperatureUnit::Farenheit);
+    /// assert_eq!(fahrenheit.value(), 32.0);
+    /// ```
     pub fn convert_to(&self, target: TemperatureUnit) -> Self {
         if self.unit == target {
             return self.clone();
@@ -76,12 +103,12 @@ impl TemperatureDimension {
         }
     }
 
-    /// Get the numeric value
+    /// Get the numeric value.
     pub fn value(&self) -> f64 {
         self.value
     }
 
-    /// Get the unit
+    /// Get the unit.
     pub fn unit(&self) -> TemperatureUnit {
         self.unit
     }
