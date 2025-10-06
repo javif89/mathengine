@@ -15,4 +15,4 @@ name = "mathengine"
 path = "src/main.rs"
 
 [dependencies]
-mathengine = { path = "../mathengine" }
+mathengine = { version = "0.1.0", path = "../mathengine" }

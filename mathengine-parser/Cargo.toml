@@ -13,5 +13,5 @@ rust-version.workspace = true
 description = "Robust parser for mathematical expressions with unit support using Pratt parsing"
 
 [dependencies]
-mathengine-lexer = { path = "../mathengine-lexer" }
-mathengine-units = { path = "../mathengine-units" }
+mathengine-lexer = { version = "0.1.0", path = "../mathengine-lexer" }
+mathengine-units = { version = "0.1.0", path = "../mathengine-units" }

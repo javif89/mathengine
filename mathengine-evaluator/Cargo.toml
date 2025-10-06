@@ -13,6 +13,6 @@ rust-version.workspace = true
 description = "Type-safe evaluation engine for mathematical expressions with comprehensive unit conversion"
 
 [dependencies]
-mathengine-lexer = { path = "../mathengine-lexer" }
-mathengine-parser = { path = "../mathengine-parser" }
-mathengine-units = { path = "../mathengine-units" }
+mathengine-lexer = { version = "0.1.0", path = "../mathengine-lexer" }
+mathengine-parser = { version = "0.1.0", path = "../mathengine-parser" }
+mathengine-units = { version = "0.1.0", path = "../mathengine-units" }
