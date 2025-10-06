@@ -1,4 +1,4 @@
-use crate::UnitError;
+use crate::{UnitError, Dimension};
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -89,18 +89,8 @@ impl TemperatureDimension {
     /// assert_eq!(fahrenheit.value(), 32.0);
     /// ```
     pub fn convert_to(&self, target: TemperatureUnit) -> Self {
-        if self.unit == target {
-            return self.clone();
-        }
-
-        // All conversions go through Kelvin (base unit)
-        let kelvin = self.to_kelvin();
-        let converted_value = Self::from_kelvin(kelvin, target);
-
-        Self {
-            value: converted_value,
-            unit: target,
-        }
+        let new_value = Self::convert_value(self.unit, target, self.value);
+        Self::new(new_value, target)
     }
 
     /// Get the numeric value.
@@ -133,6 +123,26 @@ impl TemperatureUnit {
 impl fmt::Display for TemperatureDimension {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}°{}", self.value, self.unit.canonical_string())
+    }
+}
+
+impl Dimension for TemperatureDimension {
+    type Unit = TemperatureUnit;
+
+    fn parse_unit_str(unit_str: &str) -> Result<Self::Unit, UnitError> {
+        Self::parse_unit(unit_str)
+    }
+
+    fn to_base_value(unit: Self::Unit, value: f64) -> f64 {
+        Self::new(value, unit).to_kelvin()
+    }
+
+    fn from_base_value(base_value: f64, target_unit: Self::Unit) -> f64 {
+        Self::from_kelvin(base_value, target_unit)
+    }
+
+    fn base_unit() -> Self::Unit {
+        TemperatureUnit::Kelvin
     }
 }
 

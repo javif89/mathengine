@@ -3,7 +3,6 @@ use mathengine_parser::{
     Expression,
     types::{Number, UnitValue, Value, DimensionType},
 };
-use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
 pub mod error;
 pub use error::EvalError;
@@ -38,49 +37,30 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                     }
                 };
 
-                match DimensionType::from_unit(&from_unit) {
-                    DimensionType::Length => {
-                        let from = LengthDimension::from_unit(&from_unit, value).map_err(|_| {
-                            EvalError::UnknownUnit {
-                                unit: from_unit.clone(),
-                            }
-                        })?;
-                        let to = LengthDimension::parse_unit(to_unit).map_err(|_| {
-                            EvalError::UnknownUnit {
-                                unit: to_unit.clone(),
-                            }
-                        })?;
-                        let converted = from.convert_to(to);
-                        let result = UnitValue::new(converted.value(), to.canonical_string().into());
-                        Ok(Value::UnitValue(UnitValue::new(
-                            result.value(),
-                            result.canonical_unit_name(),
-                        )))
+                let dimension = DimensionType::from_unit(&from_unit);
+
+                let from_dynamic = dimension.parse_unit_str(&from_unit).map_err(|_| {
+                    EvalError::UnknownUnit {
+                        unit: from_unit.clone(),
                     }
-                    DimensionType::Temperature => {
-                        let from =
-                            TemperatureDimension::from_unit(&from_unit, value).map_err(|_| {
-                                EvalError::UnknownUnit {
-                                    unit: from_unit.clone(),
-                                }
-                            })?;
-                        let to = TemperatureDimension::parse_unit(to_unit).map_err(|_| {
-                            EvalError::UnknownUnit {
-                                unit: to_unit.clone(),
-                            }
-                        })?;
-                        let converted = from.convert_to(to);
-                        let result = UnitValue::new(converted.value(), to.canonical_string().into());
-                        Ok(Value::UnitValue(UnitValue::new(
-                            result.value(),
-                            result.canonical_unit_name(),
-                        )))
+                })?;
+
+                let to_dynamic = dimension.parse_unit_str(to_unit).map_err(|_| {
+                    EvalError::UnknownUnit {
+                        unit: to_unit.clone(),
                     }
-                    DimensionType::Unknown => Err(EvalError::InvalidConversion {
+                })?;
+
+                let converted_value = dimension.convert_value(&from_dynamic, &to_dynamic, value)
+                    .ok_or_else(|| EvalError::InvalidConversion {
                         from_unit: from_unit.clone(),
                         to_unit: to_unit.clone(),
-                    }),
-                }
+                    })?;
+
+                Ok(Value::UnitValue(UnitValue::new(
+                    converted_value,
+                    to_dynamic.canonical_string().to_string(),
+                )))
             }
             _ => {
                 let left_val = evaluate(left)?;

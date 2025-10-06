@@ -1,4 +1,4 @@
-use crate::UnitError;
+use crate::{UnitError, Dimension};
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -115,26 +115,8 @@ impl LengthDimension {
     /// assert_eq!(cm.value(), 100.0);
     /// ```
     pub fn convert_to(&self, target: LengthUnit) -> Self {
-        if self.unit == target {
-            return self.clone();
-        }
-
-        // Try direct conversion first (for exact imperial conversions)
-        if let Some(direct_value) = Self::convert_direct(self.unit, target, self.value) {
-            return Self {
-                value: direct_value,
-                unit: target,
-            };
-        }
-
-        // Fall back to conversion through meters (base unit)
-        let meters = self.to_meters();
-        let converted_value = Self::from_meters(meters, target);
-
-        Self {
-            value: converted_value,
-            unit: target,
-        }
+        let new_value = Self::convert_value(self.unit, target, self.value);
+        Self::new(new_value, target)
     }
 
     /// Direct conversions for exact relationships (primarily imperial units)
@@ -204,6 +186,39 @@ impl LengthUnit {
 impl fmt::Display for LengthDimension {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.value, self.unit.canonical_string())
+    }
+}
+
+impl Dimension for LengthDimension {
+    type Unit = LengthUnit;
+
+    fn parse_unit_str(unit_str: &str) -> Result<Self::Unit, UnitError> {
+        Self::parse_unit(unit_str)
+    }
+
+    fn to_base_value(unit: Self::Unit, value: f64) -> f64 {
+        Self::new(value, unit).to_meters()
+    }
+
+    fn from_base_value(base_value: f64, target_unit: Self::Unit) -> f64 {
+        Self::from_meters(base_value, target_unit)
+    }
+
+    fn base_unit() -> Self::Unit {
+        LengthUnit::Meter
+    }
+
+    fn convert_value(from_unit: Self::Unit, to_unit: Self::Unit, value: f64) -> f64 {
+        if from_unit == to_unit {
+            value
+        } else if let Some(direct_value) = Self::convert_direct(from_unit, to_unit, value) {
+            // Use direct conversion for exact imperial relationships
+            direct_value
+        } else {
+            // Fall back to base unit conversion
+            let base_value = Self::to_base_value(from_unit, value);
+            Self::from_base_value(base_value, to_unit)
+        }
     }
 }
 
