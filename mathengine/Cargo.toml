@@ -1,0 +1,19 @@
+[package]
+name = "mathengine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+description = "Complete mathematical expression evaluator with unit conversions"
+
+[dependencies]
+mathengine-lexer = { path = "../mathengine-lexer" }
+mathengine-parser = { path = "../mathengine-parser" }
+mathengine-units = { path = "../mathengine-units" }
+mathengine-evaluator = { path = "../mathengine-evaluator" }

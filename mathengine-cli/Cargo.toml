@@ -15,6 +15,4 @@ name = "mathengine"
 path = "src/main.rs"
 
 [dependencies]
-mathengine-lexer = { path = "../mathengine-lexer" }
-mathengine-parser = { path = "../mathengine-parser" }
-mathengine-evaluator = { path = "../mathengine-evaluator" }
+mathengine = { path = "../mathengine" }

@@ -3,12 +3,20 @@
 version = 4
 
 [[package]]
-name = "mathengine-cli"
+name = "mathengine"
 version = "0.1.0"
 dependencies = [
  "mathengine-evaluator",
  "mathengine-lexer",
  "mathengine-parser",
+ "mathengine-units",
+]
+
+[[package]]
+name = "mathengine-cli"
+version = "0.1.0"
+dependencies = [
+ "mathengine",
 ]
 
 [[package]]
