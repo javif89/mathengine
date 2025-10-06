@@ -37,9 +37,9 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                     }
                 };
 
-                match get_dimension_type(&from_unit) {
+                match get_dimension_type(from_unit) {
                     DimensionType::Length => {
-                        let from = LengthDimension::from_unit(&from_unit, value).map_err(|_| {
+                        let from = LengthDimension::from_unit(from_unit, value).map_err(|_| {
                             EvalError::UnknownUnit {
                                 unit: from_unit.clone(),
                             }
@@ -57,7 +57,7 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                     }
                     DimensionType::Temperature => {
                         let from =
-                            TemperatureDimension::from_unit(&from_unit, value).map_err(|_| {
+                            TemperatureDimension::from_unit(from_unit, value).map_err(|_| {
                                 EvalError::UnknownUnit {
                                     unit: from_unit.clone(),
                                 }
@@ -215,9 +215,9 @@ enum DimensionType {
 }
 
 fn get_dimension_type(unit: &str) -> DimensionType {
-    if let Ok(_) = LengthDimension::parse_unit(unit) {
+    if LengthDimension::parse_unit(unit).is_ok() {
         return DimensionType::Length;
-    } else if let Ok(_) = TemperatureDimension::parse_unit(unit) {
+    } else if TemperatureDimension::parse_unit(unit).is_ok() {
         return DimensionType::Temperature;
     }
 

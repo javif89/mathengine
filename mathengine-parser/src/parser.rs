@@ -152,9 +152,9 @@ enum DimensionType {
 }
 
 fn get_dimension_type(unit: &str) -> DimensionType {
-    if let Ok(_) = LengthDimension::parse_unit(unit) {
+    if LengthDimension::parse_unit(unit).is_ok() {
         return DimensionType::Length;
-    } else if let Ok(_) = TemperatureDimension::parse_unit(unit) {
+    } else if TemperatureDimension::parse_unit(unit).is_ok() {
         return DimensionType::Temperature;
     }
 

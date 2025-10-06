@@ -33,14 +33,14 @@ fn main() {
 fn process_expression(input: &str) -> Result<String, String> {
     // Lexical analysis
     let lexer = Lexer::new(input);
-    let tokens = lexer.tokenize().map_err(|e| format_lex_error(e))?;
+    let tokens = lexer.tokenize().map_err(format_lex_error)?;
 
     // Parsing
     let mut parser = Parser::new(tokens);
-    let expr = parser.parse().map_err(|e| format_parse_error(e))?;
+    let expr = parser.parse().map_err(format_parse_error)?;
 
     // Evaluation
-    let result = evaluate(&expr).map_err(|e| format_eval_error(e))?;
+    let result = evaluate(&expr).map_err(format_eval_error)?;
 
     Ok(result.to_string())
 }
