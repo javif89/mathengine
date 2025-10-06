@@ -114,5 +114,5 @@ pub fn evaluate_expression<S: AsRef<str>>(expression: S) -> Result<crate::Value,
 }
 
 // Re-export commonly used types for convenience
-pub use mathengine_parser::types::{Value, Number, UnitValue};
+pub use mathengine_parser::types::{Value, Number, UnitValue, Unit, DimensionType};
 pub use MathEngineError as Error;
