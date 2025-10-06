@@ -59,7 +59,7 @@ impl LengthDimension {
     }
 
     /// Convert this length to meters (base unit)
-    fn to_meters(&self) -> f64 {
+    pub fn to_meters(&self) -> f64 {
         match self.unit {
             LengthUnit::Meter => self.value,
             LengthUnit::Centimeter => self.value / 100.0,

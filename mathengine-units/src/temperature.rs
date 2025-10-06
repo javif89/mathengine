@@ -43,7 +43,7 @@ impl TemperatureDimension {
     }
 
     /// Convert this temperature to Kelvin (base unit)
-    fn to_kelvin(&self) -> f64 {
+    pub fn to_kelvin(&self) -> f64 {
         match self.unit {
             TemperatureUnit::Kelvin => self.value,
             TemperatureUnit::Celcius => self.value + 273.15,

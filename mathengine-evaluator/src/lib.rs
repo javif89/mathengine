@@ -1,7 +1,7 @@
 use mathengine_lexer::Operation;
 use mathengine_parser::{
     Expression,
-    types::{Number, UnitValue, Value},
+    types::{Number, UnitValue, Value, DimensionType},
 };
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
@@ -37,7 +37,7 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                     }
                 };
 
-                match get_dimension_type(from_unit) {
+                match DimensionType::from_unit(from_unit) {
                     DimensionType::Length => {
                         let from = LengthDimension::from_unit(from_unit, value).map_err(|_| {
                             EvalError::UnknownUnit {
@@ -208,18 +208,3 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
     }
 }
 
-enum DimensionType {
-    Length,
-    Temperature,
-    Unknown,
-}
-
-fn get_dimension_type(unit: &str) -> DimensionType {
-    if LengthDimension::parse_unit(unit).is_ok() {
-        return DimensionType::Length;
-    } else if TemperatureDimension::parse_unit(unit).is_ok() {
-        return DimensionType::Temperature;
-    }
-
-    DimensionType::Unknown
-}

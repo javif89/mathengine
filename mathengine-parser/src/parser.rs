@@ -1,5 +1,6 @@
 use crate::ast::Expression;
 use crate::error::ParseError;
+use crate::types::DimensionType;
 use mathengine_lexer::{Operation, Token};
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
@@ -145,24 +146,8 @@ impl Parser {
     }
 }
 
-enum DimensionType {
-    Length,
-    Temperature,
-    Unknown,
-}
-
-fn get_dimension_type(unit: &str) -> DimensionType {
-    if LengthDimension::parse_unit(unit).is_ok() {
-        return DimensionType::Length;
-    } else if TemperatureDimension::parse_unit(unit).is_ok() {
-        return DimensionType::Temperature;
-    }
-
-    DimensionType::Unknown
-}
-
 fn canonicalize_unit(unit: &str) -> String {
-    match get_dimension_type(unit) {
+    match DimensionType::from_unit(unit) {
         DimensionType::Length => LengthDimension::parse_unit(unit)
             .unwrap()
             .canonical_string()

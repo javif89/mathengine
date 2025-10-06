@@ -2,20 +2,17 @@ use mathengine::{Error, Value, evaluate_expression};
 
 fn main() {
     let expressions = vec![
-        // "2 + 3 * (100.50 - 4)",
-        // "10m to feet",
-        // "10m + 2",
-        // // "20lbs to kg",
-        // "10 feet to in",
-        // "2^10",
-        // "23C to f",
-        // "1m to miles",
-        "1m + 1m + 100cm",
-        // Test error cases
-        // "",           // Empty input
-        // "2 + + 3",    // Invalid syntax
-        // "2 / 0",      // Division by zero
-        // "10xyz to m", // Unknown unit
+        // Test unit arithmetic
+        "1m + 1m + 100cm", // Should be 3m
+        "10ft + 2m",       // Should convert to base (meters)
+        "5m - 200cm",      // Should be 3m
+        "100in - 1ft",     // Should convert to base (meters)
+        "(1m + 2m) to cm",
+        // Test with plain numbers
+        "10m + 5",   // Adding 5 meters
+        "20ft - 10", // Subtracting 10 feet
+        // Test temperature (note: temperature addition is questionable physics)
+        "20C + 10C", // Will convert to Kelvin
     ];
 
     for e in expressions {
