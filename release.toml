@@ -1,0 +1,9 @@
+# Only allow releases from the main branch
+allow-branch = ["main"]
+
+# Shared version across all crates in workspace
+shared-version = true
+dependent-version = "upgrade" # automatically update dependent crate versions
+consolidate-commits = true    # create a single release commit per crate
+
+exclude = ["mathengine-cli"]
