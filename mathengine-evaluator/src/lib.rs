@@ -1,7 +1,7 @@
 use mathengine_lexer::Operation;
 use mathengine_parser::{
     Expression,
-    types::{Number, UnitValue, Value, DimensionType},
+    types::{Number, UnitValue, Value, ConversionError},
 };
 
 pub mod error;
@@ -37,30 +37,21 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                     }
                 };
 
-                let dimension = DimensionType::from_unit(&from_unit);
-
-                let from_dynamic = dimension.parse_unit_str(&from_unit).map_err(|_| {
-                    EvalError::UnknownUnit {
-                        unit: from_unit.clone(),
-                    }
-                })?;
-
-                let to_dynamic = dimension.parse_unit_str(to_unit).map_err(|_| {
-                    EvalError::UnknownUnit {
-                        unit: to_unit.clone(),
-                    }
-                })?;
-
-                let converted_value = dimension.convert_value(&from_dynamic, &to_dynamic, value)
-                    .ok_or_else(|| EvalError::InvalidConversion {
+                // Use the new UnitValue conversion method
+                let unit_value = UnitValue::new(value, from_unit.clone());
+                let converted = unit_value.convert_to(to_unit).map_err(|e| match e {
+                    ConversionError::CrossDimension => EvalError::InvalidConversion {
                         from_unit: from_unit.clone(),
                         to_unit: to_unit.clone(),
-                    })?;
+                    },
+                    ConversionError::UnknownUnit(unit) => EvalError::UnknownUnit { unit },
+                    ConversionError::Failed => EvalError::InvalidConversion {
+                        from_unit: from_unit.clone(),
+                        to_unit: to_unit.clone(),
+                    },
+                })?;
 
-                Ok(Value::UnitValue(UnitValue::new(
-                    converted_value,
-                    to_dynamic.canonical_string().to_string(),
-                )))
+                Ok(Value::UnitValue(converted))
             }
             _ => {
                 let left_val = evaluate(left)?;

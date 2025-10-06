@@ -5,6 +5,29 @@ use mathengine_units::{
 };
 use std::fmt::Display;
 
+/// Error type for unit conversions
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConversionError {
+    /// Attempted to convert between different dimensions (e.g., length to temperature)
+    CrossDimension,
+    /// Unknown unit string provided
+    UnknownUnit(String),
+    /// Conversion failed for other reasons
+    Failed,
+}
+
+impl Display for ConversionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConversionError::CrossDimension => write!(f, "Cannot convert between different dimensions"),
+            ConversionError::UnknownUnit(unit) => write!(f, "Unknown unit: '{}'", unit),
+            ConversionError::Failed => write!(f, "Conversion failed"),
+        }
+    }
+}
+
+impl std::error::Error for ConversionError {}
+
 /// Represents a numeric value in mathematical expressions.
 #[derive(Debug)]
 pub struct Number(pub f64);
@@ -248,6 +271,98 @@ impl UnitValue {
     fn base_unit(&self) -> String {
         self.dimension.base_unit_string().to_string()
     }
+
+    /// Convert this unit value to another unit
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length = UnitValue::new(100.0, "cm".to_string());
+    /// let in_meters = length.convert_to("m").unwrap();
+    /// assert_eq!(in_meters.value(), 1.0);
+    /// assert_eq!(in_meters.unit(), "m");
+    /// ```
+    pub fn convert_to(&self, target_unit: &str) -> Result<UnitValue, ConversionError> {
+        // Check if target is same dimension
+        let target_dimension = DimensionType::from_unit(target_unit);
+        if target_dimension != self.dimension || target_dimension == DimensionType::Unknown {
+            return Err(ConversionError::CrossDimension);
+        }
+
+        // Parse both units
+        let from_unit = self.dimension.parse_unit_str(&self.unit)
+            .map_err(|_| ConversionError::UnknownUnit(self.unit.clone()))?;
+        let to_unit = self.dimension.parse_unit_str(target_unit)
+            .map_err(|_| ConversionError::UnknownUnit(target_unit.to_string()))?;
+
+        // Convert the value
+        let new_value = self.dimension.convert_value(&from_unit, &to_unit, self.value)
+            .ok_or(ConversionError::Failed)?;
+
+        Ok(UnitValue::new(new_value, target_unit.to_string()))
+    }
+
+    /// Check if this unit value can be converted to another unit
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length = UnitValue::new(5.0, "m".to_string());
+    /// assert!(length.can_convert_to("cm"));
+    /// assert!(!length.can_convert_to("C"));
+    /// ```
+    pub fn can_convert_to(&self, target_unit: &str) -> bool {
+        let target_dimension = DimensionType::from_unit(target_unit);
+        target_dimension == self.dimension && target_dimension != DimensionType::Unknown
+    }
+
+    /// Convert this unit value to base units for its dimension
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length = UnitValue::new(100.0, "cm".to_string());
+    /// let in_base = length.in_base_units();
+    /// assert_eq!(in_base.value(), 1.0);
+    /// assert_eq!(in_base.unit(), "m");
+    /// ```
+    pub fn in_base_units(&self) -> UnitValue {
+        let base_unit_str = self.base_unit();
+        // If we're already in base units, return a copy
+        if self.canonical_unit_name() == base_unit_str {
+            UnitValue::new(self.value, base_unit_str)
+        } else {
+            // Convert to base units
+            self.convert_to(&base_unit_str).unwrap_or_else(|_| {
+                // Fallback: just return with base unit string
+                UnitValue::new(self.to_base_value(), base_unit_str)
+            })
+        }
+    }
+
+    /// Check if this unit value is in the same dimension as another
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mathengine_parser::types::UnitValue;
+    ///
+    /// let length1 = UnitValue::new(5.0, "m".to_string());
+    /// let length2 = UnitValue::new(100.0, "cm".to_string());
+    /// let temp = UnitValue::new(25.0, "C".to_string());
+    ///
+    /// assert!(length1.same_dimension_as(&length2));
+    /// assert!(!length1.same_dimension_as(&temp));
+    /// ```
+    pub fn same_dimension_as(&self, other: &UnitValue) -> bool {
+        self.dimension == other.dimension && self.dimension != DimensionType::Unknown
+    }
 }
 
 impl Display for UnitValue {
@@ -260,21 +375,17 @@ impl std::ops::Add for UnitValue {
     type Output = UnitValue;
     fn add(self, rhs: Self) -> Self::Output {
         // Only add if dimensions match
-        if self.dimension != rhs.dimension {
+        if !self.same_dimension_as(&rhs) {
             // For now, just return the left side if dimensions don't match
             // In the future, this should be an error
             return self;
         }
 
-        // Convert both to base units
-        let base_value = self.to_base_value() + rhs.to_base_value();
+        // Convert both to base units and add
+        let left_base = self.in_base_units();
+        let right_base = rhs.in_base_units();
 
-        // Return result in base units
-        UnitValue {
-            value: base_value,
-            unit: self.base_unit(),
-            dimension: self.dimension,
-        }
+        UnitValue::new(left_base.value + right_base.value, left_base.unit)
     }
 }
 
@@ -305,21 +416,17 @@ impl std::ops::Sub for UnitValue {
     type Output = UnitValue;
     fn sub(self, rhs: Self) -> Self::Output {
         // Only subtract if dimensions match
-        if self.dimension != rhs.dimension {
+        if !self.same_dimension_as(&rhs) {
             // For now, just return the left side if dimensions don't match
             // In the future, this should be an error
             return self;
         }
 
-        // Convert both to base units
-        let base_value = self.to_base_value() - rhs.to_base_value();
+        // Convert both to base units and subtract
+        let left_base = self.in_base_units();
+        let right_base = rhs.in_base_units();
 
-        // Return result in base units
-        UnitValue {
-            value: base_value,
-            unit: self.base_unit(),
-            dimension: self.dimension,
-        }
+        UnitValue::new(left_base.value - right_base.value, left_base.unit)
     }
 }
 
