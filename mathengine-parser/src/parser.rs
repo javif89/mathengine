@@ -1,8 +1,6 @@
 use crate::ast::Expression;
 use crate::error::ParseError;
-use crate::types::DimensionType;
 use mathengine_lexer::{Operation, Token};
-use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -76,7 +74,7 @@ impl Parser {
             Some(Token::Number(n)) => Ok(Expression::Number(*n)),
             Some(Token::UnitValue { value, unit }) => Ok(Expression::UnitValue {
                 value: *value,
-                unit: canonicalize_unit(unit),
+                unit: unit.clone(),
             }),
             Some(Token::Unit(unit)) => Ok(Expression::Unit(unit.clone())),
             Some(Token::Lparen) => {
@@ -146,16 +144,3 @@ impl Parser {
     }
 }
 
-fn canonicalize_unit(unit: &str) -> String {
-    match DimensionType::from_unit(unit) {
-        DimensionType::Length => LengthDimension::parse_unit(unit)
-            .unwrap()
-            .canonical_string()
-            .into(),
-        DimensionType::Temperature => TemperatureDimension::parse_unit(unit)
-            .unwrap()
-            .canonical_string()
-            .into(),
-        DimensionType::Unknown => "unknown".into(),
-    }
-}

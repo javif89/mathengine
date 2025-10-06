@@ -3,16 +3,13 @@ use mathengine::{Error, Value, evaluate_expression};
 fn main() {
     let expressions = vec![
         // Test unit arithmetic
-        "1m + 1m + 100cm", // Should be 3m
-        "10ft + 2m",       // Should convert to base (meters)
-        "5m - 200cm",      // Should be 3m
-        "100in - 1ft",     // Should convert to base (meters)
+        // "1m + 1m + 100cm", // Should be 3m
+        // "10ft + 2m",       // Should convert to base (meters)
+        // "5m - 200cm",      // Should be 3m
+        // "100in - 1ft",     // Should convert to base (meters)
         "(1m + 2m) to cm",
-        // Test with plain numbers
-        "10m + 5",   // Adding 5 meters
-        "20ft - 10", // Subtracting 10 feet
-        // Test temperature (note: temperature addition is questionable physics)
-        "20C + 10C", // Will convert to Kelvin
+        "(1m + 2m) to yards",
+        "1 meter to centimeters",
     ];
 
     for e in expressions {

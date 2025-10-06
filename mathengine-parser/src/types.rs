@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use mathengine_units::{length::LengthDimension, temperature::TemperatureDimension};
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct Number(pub f64);
@@ -89,7 +89,11 @@ pub struct UnitValue {
 impl UnitValue {
     pub fn new(value: f64, unit: String) -> Self {
         let dimension = DimensionType::from_unit(&unit);
-        Self { value, unit, dimension }
+        Self {
+            value,
+            unit,
+            dimension,
+        }
     }
 
     pub fn value(&self) -> f64 {
@@ -102,6 +106,22 @@ impl UnitValue {
 
     pub fn dimension(&self) -> DimensionType {
         self.dimension
+    }
+
+    /// Get the "canonical" name for a unit for standardizing
+    /// display.
+    /// For example
+    /// "meters" -> "m"
+    /// "inches" -> "in"
+    /// "celcius" -> "C"
+    pub fn canonical_unit_name(&self) -> String {
+        match self.dimension {
+            DimensionType::Length => LengthDimension::parse_unit(&self.unit)
+                .map_or(self.unit.to_string(), |u| u.canonical_string().to_string()),
+            DimensionType::Temperature => TemperatureDimension::parse_unit(&self.unit)
+                .map_or(self.unit.to_string(), |u| u.canonical_string().to_string()),
+            _ => self.unit.to_string(),
+        }
     }
 
     /// Convert this unit value to base units for its dimension
@@ -139,7 +159,7 @@ impl UnitValue {
 
 impl Display for UnitValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.value, self.unit)
+        write!(f, "{}{}", self.value, self.canonical_unit_name())
     }
 }
 
