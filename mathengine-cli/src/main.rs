@@ -2,20 +2,20 @@ use mathengine::{Error, Value, evaluate_expression};
 
 fn main() {
     let expressions = vec![
-        "2 + 3 * (100.50 - 4)",
-        "10m to feet",
-        "10m + 2",
-        // "20lbs to kg",
-        "10 feet to in",
-        "2^10",
-        "23C to f",
-        "1m to miles",
+        // "2 + 3 * (100.50 - 4)",
+        // "10m to feet",
+        // "10m + 2",
+        // // "20lbs to kg",
+        // "10 feet to in",
+        // "2^10",
+        // "23C to f",
+        // "1m to miles",
         "1m + 1m + 100cm",
         // Test error cases
-        "",           // Empty input
-        "2 + + 3",    // Invalid syntax
-        "2 / 0",      // Division by zero
-        "10xyz to m", // Unknown unit
+        // "",           // Empty input
+        // "2 + + 3",    // Invalid syntax
+        // "2 / 0",      // Division by zero
+        // "10xyz to m", // Unknown unit
     ];
 
     for e in expressions {
