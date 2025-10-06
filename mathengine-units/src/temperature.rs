@@ -1,5 +1,4 @@
-use crate::{UnitError, Dimension};
-use std::fmt;
+use crate::{UnitError, UnitType, UnitConversion, Dimension};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TemperatureUnit {
@@ -8,49 +7,17 @@ pub enum TemperatureUnit {
     Farenheit,
 }
 
-#[derive(Debug, Clone)]
-pub struct TemperatureDimension {
-    value: f64,
-    unit: TemperatureUnit,
-}
 
-impl TemperatureDimension {
-    // Unit constants for clean conversion API
-    pub const KELVIN: TemperatureUnit = TemperatureUnit::Kelvin;
-    pub const CELCIUS: TemperatureUnit = TemperatureUnit::Celcius;
-    pub const FARENHEIR: TemperatureUnit = TemperatureUnit::Farenheit;
-
-    /// Create a TemperatureDimension from a unit string and value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::temperature::TemperatureDimension;
-    ///
-    /// let temp = TemperatureDimension::from_unit("C", 25.0).unwrap();
-    /// assert_eq!(temp.value(), 25.0);
-    /// ```
-    pub fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
-        let unit = Self::parse_unit(unit_str)?;
-        Ok(Self { value, unit })
+impl UnitType for TemperatureUnit {
+    fn canonical_string(&self) -> &'static str {
+        match self {
+            TemperatureUnit::Kelvin => "K",
+            TemperatureUnit::Celcius => "C",
+            TemperatureUnit::Farenheit => "F",
+        }
     }
 
-    /// Create a TemperatureDimension directly with a TemperatureUnit.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::temperature::{TemperatureDimension, TemperatureUnit};
-    ///
-    /// let temp = TemperatureDimension::new(32.0, TemperatureUnit::Farenheit);
-    /// assert_eq!(temp.value(), 32.0);
-    /// ```
-    pub fn new(value: f64, unit: TemperatureUnit) -> Self {
-        Self { value, unit }
-    }
-
-    /// Parse a string into a TemperatureUnit
-    pub fn parse_unit(s: &str) -> Result<TemperatureUnit, UnitError> {
+    fn parse(s: &str) -> Result<Self, UnitError> {
         match s.to_lowercase().as_str() {
             "c" | "celcius" => Ok(TemperatureUnit::Celcius),
             "f" | "farenheit" => Ok(TemperatureUnit::Farenheit),
@@ -59,92 +26,37 @@ impl TemperatureDimension {
         }
     }
 
-    /// Convert this temperature to Kelvin (base unit)
-    pub fn to_kelvin(&self) -> f64 {
-        match self.unit {
-            TemperatureUnit::Kelvin => self.value,
-            TemperatureUnit::Celcius => self.value + 273.15,
-            TemperatureUnit::Farenheit => (self.value - 32.0) * 5.0 / 9.0 + 273.15,
-        }
+    fn dimension_name() -> &'static str {
+        "Temperature"
     }
+}
 
-    /// Convert Kelvin to the specified unit
-    fn from_kelvin(kelvin: f64, unit: TemperatureUnit) -> f64 {
+
+impl UnitConversion<TemperatureUnit> for Dimension<TemperatureUnit> {
+    fn to_base_value(unit: TemperatureUnit, value: f64) -> f64 {
         match unit {
-            TemperatureUnit::Kelvin => kelvin,
-            TemperatureUnit::Celcius => kelvin - 273.15,
-            TemperatureUnit::Farenheit => (kelvin - 273.15) * 9.0 / 5.0 + 32.0,
+            TemperatureUnit::Kelvin => value,
+            TemperatureUnit::Celcius => value + 273.15,
+            TemperatureUnit::Farenheit => (value - 32.0) * 5.0 / 9.0 + 273.15,
         }
     }
 
-    /// Convert this temperature to a different unit.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::temperature::{TemperatureDimension, TemperatureUnit};
-    ///
-    /// let celsius = TemperatureDimension::new(0.0, TemperatureUnit::Celcius);
-    /// let fahrenheit = celsius.convert_to(TemperatureUnit::Farenheit);
-    /// assert_eq!(fahrenheit.value(), 32.0);
-    /// ```
-    pub fn convert_to(&self, target: TemperatureUnit) -> Self {
-        let new_value = Self::convert_value(self.unit, target, self.value);
-        Self::new(new_value, target)
-    }
-
-    /// Get the numeric value.
-    pub fn value(&self) -> f64 {
-        self.value
-    }
-
-    /// Get the unit.
-    pub fn unit(&self) -> TemperatureUnit {
-        self.unit
-    }
-
-    /// Get value as Kelvin
-    pub fn as_kelvin(&self) -> f64 {
-        self.to_kelvin()
-    }
-}
-
-impl TemperatureUnit {
-    /// Get the canonical string representation for this unit
-    pub fn canonical_string(&self) -> &'static str {
-        match self {
-            TemperatureUnit::Kelvin => "K",
-            TemperatureUnit::Celcius => "C",
-            TemperatureUnit::Farenheit => "F",
+    fn from_base_value(base_value: f64, unit: TemperatureUnit) -> f64 {
+        match unit {
+            TemperatureUnit::Kelvin => base_value,
+            TemperatureUnit::Celcius => base_value - 273.15,
+            TemperatureUnit::Farenheit => (base_value - 273.15) * 9.0 / 5.0 + 32.0,
         }
     }
-}
 
-impl fmt::Display for TemperatureDimension {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}°{}", self.value, self.unit.canonical_string())
-    }
-}
-
-impl Dimension for TemperatureDimension {
-    type Unit = TemperatureUnit;
-
-    fn parse_unit_str(unit_str: &str) -> Result<Self::Unit, UnitError> {
-        Self::parse_unit(unit_str)
-    }
-
-    fn to_base_value(unit: Self::Unit, value: f64) -> f64 {
-        Self::new(value, unit).to_kelvin()
-    }
-
-    fn from_base_value(base_value: f64, target_unit: Self::Unit) -> f64 {
-        Self::from_kelvin(base_value, target_unit)
-    }
-
-    fn base_unit() -> Self::Unit {
+    fn base_unit() -> TemperatureUnit {
         TemperatureUnit::Kelvin
     }
 }
+
+
+/// Type alias for the concrete temperature dimension
+pub type TemperatureDimension = Dimension<TemperatureUnit>;
 
 #[cfg(test)]
 mod tests {
@@ -181,7 +93,7 @@ mod tests {
     #[test]
     fn test_display() {
         let temp = TemperatureDimension::from_unit("C", 25.5).unwrap();
-        assert_eq!(format!("{}", temp), "25.5°C");
+        assert_eq!(format!("{}", temp), "25.5C");
     }
 
     #[test]

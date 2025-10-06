@@ -1,5 +1,4 @@
-use crate::{UnitError, Dimension};
-use std::fmt;
+use crate::{UnitError, UnitType, UnitConversion, Dimension};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LengthUnit {
@@ -13,55 +12,22 @@ pub enum LengthUnit {
     Mile,
 }
 
-#[derive(Debug, Clone)]
-pub struct LengthDimension {
-    value: f64,
-    unit: LengthUnit,
-}
 
-impl LengthDimension {
-    // Unit constants for clean conversion API
-    pub const METERS: LengthUnit = LengthUnit::Meter;
-    pub const CENTIMETERS: LengthUnit = LengthUnit::Centimeter;
-    pub const MILLIMETERS: LengthUnit = LengthUnit::Millimeter;
-    pub const KILOMETERS: LengthUnit = LengthUnit::Kilometer;
-    pub const FEET: LengthUnit = LengthUnit::Foot;
-    pub const INCH: LengthUnit = LengthUnit::Inch;
-    pub const INCHES: LengthUnit = LengthUnit::Inch;
-    pub const YARDS: LengthUnit = LengthUnit::Yard;
-    pub const MILES: LengthUnit = LengthUnit::Mile;
-
-    /// Create a LengthDimension from a unit string and value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::length::LengthDimension;
-    ///
-    /// let length = LengthDimension::from_unit("cm", 100.0).unwrap();
-    /// assert_eq!(length.value(), 100.0);
-    /// ```
-    pub fn from_unit(unit_str: &str, value: f64) -> Result<Self, UnitError> {
-        let unit = Self::parse_unit(unit_str)?;
-        Ok(Self { value, unit })
+impl UnitType for LengthUnit {
+    fn canonical_string(&self) -> &'static str {
+        match self {
+            LengthUnit::Meter => "m",
+            LengthUnit::Centimeter => "cm",
+            LengthUnit::Millimeter => "mm",
+            LengthUnit::Kilometer => "km",
+            LengthUnit::Foot => "ft",
+            LengthUnit::Inch => "in",
+            LengthUnit::Yard => "yd",
+            LengthUnit::Mile => "mi",
+        }
     }
 
-    /// Create a LengthDimension directly with a LengthUnit.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::length::{LengthDimension, LengthUnit};
-    ///
-    /// let length = LengthDimension::new(5.0, LengthUnit::Meter);
-    /// assert_eq!(length.value(), 5.0);
-    /// ```
-    pub fn new(value: f64, unit: LengthUnit) -> Self {
-        Self { value, unit }
-    }
-
-    /// Parse a string into a LengthUnit
-    pub fn parse_unit(s: &str) -> Result<LengthUnit, UnitError> {
+    fn parse(s: &str) -> Result<Self, UnitError> {
         match s.to_lowercase().as_str() {
             "m" | "meter" | "meters" => Ok(LengthUnit::Meter),
             "cm" | "centimeter" | "centimeters" => Ok(LengthUnit::Centimeter),
@@ -75,51 +41,43 @@ impl LengthDimension {
         }
     }
 
-    /// Convert this length to meters (base unit)
-    pub fn to_meters(&self) -> f64 {
-        match self.unit {
-            LengthUnit::Meter => self.value,
-            LengthUnit::Centimeter => self.value / 100.0,
-            LengthUnit::Millimeter => self.value / 1000.0,
-            LengthUnit::Kilometer => self.value * 1000.0,
-            LengthUnit::Foot => self.value * 0.3048,
-            LengthUnit::Inch => self.value * 0.0254,
-            LengthUnit::Yard => self.value * 0.9144,
-            LengthUnit::Mile => self.value * 1609.344,
-        }
+    fn dimension_name() -> &'static str {
+        "Length"
     }
+}
 
-    /// Convert meters to the specified unit
-    fn from_meters(meters: f64, unit: LengthUnit) -> f64 {
+
+impl UnitConversion<LengthUnit> for Dimension<LengthUnit> {
+    fn to_base_value(unit: LengthUnit, value: f64) -> f64 {
         match unit {
-            LengthUnit::Meter => meters,
-            LengthUnit::Centimeter => meters * 100.0,
-            LengthUnit::Millimeter => meters * 1000.0,
-            LengthUnit::Kilometer => meters / 1000.0,
-            LengthUnit::Foot => meters / 0.3048,
-            LengthUnit::Inch => meters / 0.0254,
-            LengthUnit::Yard => meters / 0.9144,
-            LengthUnit::Mile => meters / 1609.344,
+            LengthUnit::Meter => value,
+            LengthUnit::Centimeter => value / 100.0,
+            LengthUnit::Millimeter => value / 1000.0,
+            LengthUnit::Kilometer => value * 1000.0,
+            LengthUnit::Foot => value * 0.3048,
+            LengthUnit::Inch => value * 0.0254,
+            LengthUnit::Yard => value * 0.9144,
+            LengthUnit::Mile => value * 1609.344,
         }
     }
 
-    /// Convert this length to a different unit.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mathengine_units::length::{LengthDimension, LengthUnit};
-    ///
-    /// let meters = LengthDimension::new(1.0, LengthUnit::Meter);
-    /// let cm = meters.convert_to(LengthUnit::Centimeter);
-    /// assert_eq!(cm.value(), 100.0);
-    /// ```
-    pub fn convert_to(&self, target: LengthUnit) -> Self {
-        let new_value = Self::convert_value(self.unit, target, self.value);
-        Self::new(new_value, target)
+    fn from_base_value(base_value: f64, unit: LengthUnit) -> f64 {
+        match unit {
+            LengthUnit::Meter => base_value,
+            LengthUnit::Centimeter => base_value * 100.0,
+            LengthUnit::Millimeter => base_value * 1000.0,
+            LengthUnit::Kilometer => base_value / 1000.0,
+            LengthUnit::Foot => base_value / 0.3048,
+            LengthUnit::Inch => base_value / 0.0254,
+            LengthUnit::Yard => base_value / 0.9144,
+            LengthUnit::Mile => base_value / 1609.344,
+        }
     }
 
-    /// Direct conversions for exact relationships (primarily imperial units)
+    fn base_unit() -> LengthUnit {
+        LengthUnit::Meter
+    }
+
     fn convert_direct(from: LengthUnit, to: LengthUnit, value: f64) -> Option<f64> {
         match (from, to) {
             // Inch <-> Foot
@@ -150,77 +108,11 @@ impl LengthDimension {
             _ => None,
         }
     }
-
-    /// Get the numeric value.
-    pub fn value(&self) -> f64 {
-        self.value
-    }
-
-    /// Get the unit.
-    pub fn unit(&self) -> LengthUnit {
-        self.unit
-    }
-
-    /// Get value as meters
-    pub fn as_meters(&self) -> f64 {
-        self.to_meters()
-    }
 }
 
-impl LengthUnit {
-    /// Get the canonical string representation for this unit
-    pub fn canonical_string(&self) -> &'static str {
-        match self {
-            LengthUnit::Meter => "m",
-            LengthUnit::Centimeter => "cm",
-            LengthUnit::Millimeter => "mm",
-            LengthUnit::Kilometer => "km",
-            LengthUnit::Foot => "ft",
-            LengthUnit::Inch => "in",
-            LengthUnit::Yard => "yd",
-            LengthUnit::Mile => "mi",
-        }
-    }
-}
 
-impl fmt::Display for LengthDimension {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.value, self.unit.canonical_string())
-    }
-}
-
-impl Dimension for LengthDimension {
-    type Unit = LengthUnit;
-
-    fn parse_unit_str(unit_str: &str) -> Result<Self::Unit, UnitError> {
-        Self::parse_unit(unit_str)
-    }
-
-    fn to_base_value(unit: Self::Unit, value: f64) -> f64 {
-        Self::new(value, unit).to_meters()
-    }
-
-    fn from_base_value(base_value: f64, target_unit: Self::Unit) -> f64 {
-        Self::from_meters(base_value, target_unit)
-    }
-
-    fn base_unit() -> Self::Unit {
-        LengthUnit::Meter
-    }
-
-    fn convert_value(from_unit: Self::Unit, to_unit: Self::Unit, value: f64) -> f64 {
-        if from_unit == to_unit {
-            value
-        } else if let Some(direct_value) = Self::convert_direct(from_unit, to_unit, value) {
-            // Use direct conversion for exact imperial relationships
-            direct_value
-        } else {
-            // Fall back to base unit conversion
-            let base_value = Self::to_base_value(from_unit, value);
-            Self::from_base_value(base_value, to_unit)
-        }
-    }
-}
+/// Type alias for the concrete length dimension
+pub type LengthDimension = Dimension<LengthUnit>;
 
 #[cfg(test)]
 mod tests {
@@ -236,15 +128,15 @@ mod tests {
     #[test]
     fn test_length_conversion() {
         let length = LengthDimension::from_unit("cm", 100.0).unwrap();
-        let in_meters = length.convert_to(LengthDimension::METERS);
+        let in_meters = length.convert_to(LengthUnit::Meter);
         assert_eq!(in_meters.value(), 1.0);
         assert_eq!(in_meters.unit(), LengthUnit::Meter);
     }
 
     #[test]
     fn test_feet_to_inches() {
-        let length = LengthDimension::new(1.0, LengthDimension::FEET);
-        let in_inches = length.convert_to(LengthDimension::INCHES);
+        let length = LengthDimension::new(1.0, LengthUnit::Foot);
+        let in_inches = length.convert_to(LengthUnit::Inch);
         assert!((in_inches.value() - 12.0).abs() < 1e-10);
     }
 

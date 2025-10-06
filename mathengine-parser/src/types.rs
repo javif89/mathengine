@@ -1,7 +1,7 @@
 use mathengine_units::{
-    length::LengthDimension,
-    temperature::TemperatureDimension,
-    Dimension
+    length::LengthUnit,
+    temperature::TemperatureUnit,
+    UnitType, UnitConversion, Dimension
 };
 use std::fmt::Display;
 
@@ -99,9 +99,9 @@ impl Unit {
 impl DimensionType {
     /// Determine the dimension type from a unit string
     pub fn from_unit(unit: &str) -> Self {
-        if LengthDimension::parse_unit(unit).is_ok() {
+        if LengthUnit::parse(unit).is_ok() {
             DimensionType::Length
-        } else if TemperatureDimension::parse_unit(unit).is_ok() {
+        } else if TemperatureUnit::parse(unit).is_ok() {
             DimensionType::Temperature
         } else {
             DimensionType::Unknown
@@ -112,11 +112,11 @@ impl DimensionType {
     pub fn parse_unit_str(&self, unit_str: &str) -> Result<Unit, mathengine_units::UnitError> {
         match self {
             DimensionType::Length => {
-                LengthDimension::parse_unit_str(unit_str)
+                LengthUnit::parse(unit_str)
                     .map(Unit::Length)
             }
             DimensionType::Temperature => {
-                TemperatureDimension::parse_unit_str(unit_str)
+                TemperatureUnit::parse(unit_str)
                     .map(Unit::Temperature)
             }
             DimensionType::Unknown => Err(mathengine_units::UnitError::UnknownUnit(unit_str.to_string())),
@@ -136,10 +136,10 @@ impl DimensionType {
     pub fn to_base_value(&self, unit: &Unit, value: f64) -> Option<f64> {
         match (self, unit) {
             (DimensionType::Length, Unit::Length(u)) => {
-                Some(LengthDimension::to_base_value(*u, value))
+                Some(<Dimension<LengthUnit> as UnitConversion<LengthUnit>>::to_base_value(*u, value))
             }
             (DimensionType::Temperature, Unit::Temperature(u)) => {
-                Some(TemperatureDimension::to_base_value(*u, value))
+                Some(<Dimension<TemperatureUnit> as UnitConversion<TemperatureUnit>>::to_base_value(*u, value))
             }
             _ => None,
         }
@@ -149,10 +149,10 @@ impl DimensionType {
     pub fn convert_value(&self, from_unit: &Unit, to_unit: &Unit, value: f64) -> Option<f64> {
         match (self, from_unit, to_unit) {
             (DimensionType::Length, Unit::Length(from), Unit::Length(to)) => {
-                Some(LengthDimension::convert_value(*from, *to, value))
+                Some(Dimension::<LengthUnit>::convert_value(*from, *to, value))
             }
             (DimensionType::Temperature, Unit::Temperature(from), Unit::Temperature(to)) => {
-                Some(TemperatureDimension::convert_value(*from, *to, value))
+                Some(Dimension::<TemperatureUnit>::convert_value(*from, *to, value))
             }
             _ => None, // Cross-dimension conversion rejected
         }
@@ -161,8 +161,8 @@ impl DimensionType {
     /// Get the base unit string for this dimension
     pub fn base_unit_string(&self) -> &'static str {
         match self {
-            DimensionType::Length => LengthDimension::base_unit().canonical_string(),
-            DimensionType::Temperature => TemperatureDimension::base_unit().canonical_string(),
+            DimensionType::Length => <Dimension<LengthUnit> as UnitConversion<LengthUnit>>::base_unit().canonical_string(),
+            DimensionType::Temperature => <Dimension<TemperatureUnit> as UnitConversion<TemperatureUnit>>::base_unit().canonical_string(),
             DimensionType::Unknown => "unknown",
         }
     }
