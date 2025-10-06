@@ -47,110 +47,42 @@ pub fn evaluate(expr: &Expression) -> Result<Value, EvalError> {
                 let left_val = evaluate(left)?;
                 let right_val = evaluate(right)?;
 
-                match (left_val, right_val) {
-                    (Value::Number(l), Value::Number(r)) => {
-                        let result = match op {
-                            Operation::Add => l + r,
-                            Operation::Subtract => l - r,
-                            Operation::Multiply => l * r,
-                            Operation::Divide => {
-                                if r.0 == 0.0 {
-                                    return Err(EvalError::DivisionByZero);
-                                }
-                                l / r
-                            }
-                            Operation::Power => {
-                                let l_val = l.0;
-                                let r_val = r.0;
-                                Number::from(l_val.powf(r_val))
-                            }
-                            Operation::Convert => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "convert".to_string(),
-                                    operand_type: "numbers".to_string(),
-                                });
-                            }
-                        };
-                        Ok(Value::Number(result))
-                    }
-                    (Value::UnitValue(l), Value::UnitValue(r)) => {
-                        let result = match op {
-                            Operation::Add => l + r,
-                            Operation::Subtract => l - r,
-                            Operation::Multiply | Operation::Divide => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: format!("{:?}", op),
-                                    operand_type: "unit values".to_string(),
-                                });
-                            }
-                            Operation::Power => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "power".to_string(),
-                                    operand_type: "unit values".to_string(),
-                                });
-                            }
-                            Operation::Convert => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "convert".to_string(),
-                                    operand_type: "unit values".to_string(),
-                                });
-                            }
-                        };
-                        Ok(Value::UnitValue(result))
-                    }
-                    (Value::UnitValue(l), Value::Number(r)) => {
-                        let result = match op {
-                            Operation::Add => l + r,
-                            Operation::Subtract => l - r,
-                            Operation::Multiply => l * r,
-                            Operation::Divide => {
-                                if r.0 == 0.0 {
-                                    return Err(EvalError::DivisionByZero);
-                                }
-                                l / r
-                            }
-                            Operation::Power => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "power".to_string(),
-                                    operand_type: "unit value and number".to_string(),
-                                });
-                            }
-                            Operation::Convert => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "convert".to_string(),
-                                    operand_type: "unit value and number".to_string(),
-                                });
-                            }
-                        };
-                        Ok(Value::UnitValue(result))
-                    }
-                    (Value::Number(l), Value::UnitValue(r)) => {
-                        let result = match op {
-                            Operation::Add => l + r,
-                            Operation::Subtract => l - r,
-                            Operation::Multiply => l * r,
-                            Operation::Divide => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "divide".to_string(),
-                                    operand_type: "number by unit value".to_string(),
-                                });
-                            }
-                            Operation::Power => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "power".to_string(),
-                                    operand_type: "number and unit value".to_string(),
-                                });
-                            }
-                            Operation::Convert => {
-                                return Err(EvalError::UnsupportedOperation {
-                                    operation: "convert".to_string(),
-                                    operand_type: "number and unit value".to_string(),
-                                });
-                            }
-                        };
-                        Ok(Value::UnitValue(result))
+                // Check for division by zero before delegating to operators
+                if let Operation::Divide = op {
+                    match &right_val {
+                        Value::Number(n) if n.0 == 0.0 => return Err(EvalError::DivisionByZero),
+                        _ => {}
                     }
                 }
+
+                let result = match op {
+                    Operation::Add => left_val + right_val,
+                    Operation::Subtract => left_val - right_val,
+                    Operation::Multiply => left_val * right_val,
+                    Operation::Divide => left_val / right_val,
+                    Operation::Power => {
+                        // Power is not implemented via operators yet, handle specially
+                        match (left_val, right_val) {
+                            (Value::Number(l), Value::Number(r)) => {
+                                Value::Number(Number::from(l.0.powf(r.0)))
+                            }
+                            _ => {
+                                return Err(EvalError::UnsupportedOperation {
+                                    operation: "power".to_string(),
+                                    operand_type: "non-numeric values".to_string(),
+                                });
+                            }
+                        }
+                    }
+                    Operation::Convert => {
+                        return Err(EvalError::UnsupportedOperation {
+                            operation: "convert".to_string(),
+                            operand_type: "binary operation".to_string(),
+                        });
+                    }
+                };
+
+                Ok(result)
             }
         },
         Expression::Unary { op, operand } => {
